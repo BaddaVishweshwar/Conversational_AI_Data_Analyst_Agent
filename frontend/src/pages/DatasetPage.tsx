@@ -32,8 +32,10 @@ export default function DatasetPage() {
             try {
                 await datasetsAPI.delete(datasetId);
                 await loadDatasets();
-            } catch (error) {
+                alert('Dataset deleted successfully');
+            } catch (error: any) {
                 console.error('Error deleting dataset:', error);
+                alert(error.response?.data?.detail || 'Failed to delete dataset');
             }
         }
     };
@@ -138,11 +140,14 @@ export default function DatasetPage() {
 
                                 {/* Delete button on hover */}
                                 <button
-                                    onClick={() => handleDeleteDataset(dataset.id)}
-                                    className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-muted opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-destructive hover:text-white"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteDataset(dataset.id);
+                                    }}
+                                    className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-muted border border-border opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-destructive hover:text-white hover:border-destructive z-10"
                                     title="Delete dataset"
                                 >
-                                    <span className="text-sm">×</span>
+                                    <span className="text-lg font-bold">×</span>
                                 </button>
                             </div>
                         ))}
