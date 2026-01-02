@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { datasetsAPI } from '../lib/api';
-import { Database, Upload, Plus, Search, Calendar, Table2 } from 'lucide-react';
+import { Database, Upload, Plus, Search, Calendar, Table2, CheckCircle2, Circle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ export default function DatasetPage() {
     const [datasets, setDatasets] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
+    const [selectedDatasets, setSelectedDatasets] = useState<number[]>([]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -32,12 +33,31 @@ export default function DatasetPage() {
             try {
                 await datasetsAPI.delete(datasetId);
                 await loadDatasets();
+                // Remove from selected if it was selected
+                setSelectedDatasets(prev => prev.filter(id => id !== datasetId));
                 alert('Dataset deleted successfully');
             } catch (error: any) {
                 console.error('Error deleting dataset:', error);
                 alert(error.response?.data?.detail || 'Failed to delete dataset');
             }
         }
+    };
+
+    const toggleDatasetSelection = (datasetId: number) => {
+        setSelectedDatasets(prev =>
+            prev.includes(datasetId)
+                ? prev.filter(id => id !== datasetId)
+                : [...prev, datasetId]
+        );
+    };
+
+    const handleStartAnalyzing = () => {
+        if (selectedDatasets.length === 0) {
+            alert('Please select at least one dataset');
+            return;
+        }
+        // Navigate to analytics with the first selected dataset
+        navigate(`/analytics?dataset=${selectedDatasets[0]}`);
     };
 
     const filteredDatasets = datasets.filter(dataset =>
@@ -83,121 +103,139 @@ export default function DatasetPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
-                        {filteredDatasets.map((dataset) => (
-                            <div
-                                key={dataset.id}
-                                className="group relative border border-border rounded-xl p-6 hover:bg-muted/30 transition-all bg-card"
-                            >
-                                {/* Dataset Icon */}
-                                <div className="flex items-start gap-4 mb-4">
-                                    <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
-                                        <Database className="w-6 h-6 text-accent" />
+                        {filteredDatasets.map((dataset) => {
+                            const isSelected = selectedDatasets.includes(dataset.id);
+                            return (
+                                <div
+                                    key={dataset.id}
+                                    className={`group relative border rounded-xl p-6 hover:bg-muted/30 transition-all bg-card cursor-pointer ${isSelected ? 'border-accent bg-accent/5' : 'border-border'
+                                        }`}
+                                    onClick={() => toggleDatasetSelection(dataset.id)}
+                                >
+                                    {/* Selection Checkbox */}
+                                    <div className="absolute top-4 left-4">
+                                        {isSelected ? (
+                                            <CheckCircle2 className="w-5 h-5 text-accent" />
+                                        ) : (
+                                            <Circle className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        )}
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="text-lg font-semibold text-foreground mb-1 truncate">
-                                            {dataset.name}
-                                        </h3>
-                                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                            <span className="flex items-center gap-1">
-                                                <Table2 className="w-3 h-3" />
-                                                {dataset.row_count?.toLocaleString() || 0} rows
-                                            </span>
-                                            <span>•</span>
-                                            <span className="flex items-center gap-1">
-                                                <Calendar className="w-3 h-3" />
-                                                {new Date(dataset.created_at).toLocaleDateString()}
-                                            </span>
+
+                                    {/* Dataset Icon */}
+                                    <div className="flex items-start gap-4 mb-4 ml-8">
+                                        <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                                            <Database className="w-6 h-6 text-accent" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="text-lg font-semibold text-foreground mb-1 truncate">
+                                                {dataset.name}
+                                            </h3>
+                                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                                <span className="flex items-center gap-1">
+                                                    <Table2 className="w-3 h-3" />
+                                                    {dataset.row_count?.toLocaleString() || 0} rows
+                                                </span>
+                                                <span>•</span>
+                                                <span className="flex items-center gap-1">
+                                                    <Calendar className="w-3 h-3" />
+                                                    {new Date(dataset.created_at).toLocaleDateString()}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Actions */}
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        variant="default"
-                                        size="sm"
-                                        className="flex-1 bg-accent hover:bg-accent/90"
-                                        onClick={() => navigate(`/data-view?dataset=${dataset.id}`)}
-                                    >
-                                        Load
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="flex-1 border-border"
-                                        onClick={() => {
-                                            // Navigate to analytics or manage view
-                                            navigate(`/analytics`);
+                                    {/* Actions */}
+                                    <div className="flex items-center gap-2 ml-8">
+                                        <Button
+                                            variant="default"
+                                            size="sm"
+                                            className="flex-1 bg-accent hover:bg-accent/90"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate(`/data-view?dataset=${dataset.id}`);
+                                            }}
+                                        >
+                                            Load
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex-1 border-border"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate(`/analytics?dataset=${dataset.id}`);
+                                            }}
+                                        >
+                                            Analyze
+                                        </Button>
+                                    </div>
+
+                                    {/* Delete button on hover */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteDataset(dataset.id);
                                         }}
+                                        className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-muted border border-border opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-destructive hover:text-white hover:border-destructive z-10"
+                                        title="Delete dataset"
                                     >
-                                        Manage
-                                    </Button>
+                                        <span className="text-lg font-bold">×</span>
+                                    </button>
                                 </div>
-
-                                {/* Delete button on hover */}
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteDataset(dataset.id);
-                                    }}
-                                    className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-muted border border-border opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-destructive hover:text-white hover:border-destructive z-10"
-                                    title="Delete dataset"
-                                >
-                                    <span className="text-lg font-bold">×</span>
-                                </button>
-                            </div>
-                        ))}
+                            );
+                        })}
+                    </div>
                     </div>
                 )}
 
-                {/* Upload Section */}
-                <div className="border-t border-border pt-12">
-                    <div className="flex flex-col items-center gap-4">
-                        <Button
-                            size="lg"
-                            className="bg-accent hover:bg-accent/90 px-8 h-12 text-base"
-                            onClick={() => {
-                                // Trigger file upload
-                                const input = document.createElement('input');
-                                input.type = 'file';
-                                input.accept = '.csv,.xlsx,.xls';
-                                input.onchange = async (e: any) => {
-                                    const file = e.target.files[0];
-                                    if (file) {
-                                        try {
-                                            setLoading(true);
-                                            await datasetsAPI.upload(file);
-                                            await loadDatasets();
-                                            alert('Dataset uploaded successfully!');
-                                        } catch (error: any) {
-                                            console.error('Upload error:', error);
-                                            alert(error.response?.data?.detail || 'Failed to upload dataset');
-                                        } finally {
-                                            setLoading(false);
-                                        }
+            {/* Upload Section */}
+            <div className="border-t border-border pt-12">
+                <div className="flex flex-col items-center gap-4">
+                    <Button
+                        size="lg"
+                        className="bg-accent hover:bg-accent/90 px-8 h-12 text-base"
+                        onClick={() => {
+                            // Trigger file upload
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = '.csv,.xlsx,.xls';
+                            input.onchange = async (e: any) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                    try {
+                                        setLoading(true);
+                                        await datasetsAPI.upload(file);
+                                        await loadDatasets();
+                                        alert('Dataset uploaded successfully!');
+                                    } catch (error: any) {
+                                        console.error('Upload error:', error);
+                                        alert(error.response?.data?.detail || 'Failed to upload dataset');
+                                    } finally {
+                                        setLoading(false);
                                     }
-                                };
-                                input.click();
-                            }}
-                        >
-                            <Upload className="w-5 h-5 mr-2" />
-                            Upload Dataset
-                        </Button>
+                                }
+                            };
+                            input.click();
+                        }}
+                    >
+                        <Upload className="w-5 h-5 mr-2" />
+                        Upload Dataset
+                    </Button>
 
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <button className="hover:text-accent transition-colors flex items-center gap-1.5">
-                                <Plus className="w-4 h-4" />
-                                Connect Database
-                            </button>
-                            <span>•</span>
-                            <button className="hover:text-accent transition-colors flex items-center gap-1.5">
-                                <Plus className="w-4 h-4" />
-                                Connect Cloud Storage
-                            </button>
-                        </div>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <button className="hover:text-accent transition-colors flex items-center gap-1.5">
+                            <Plus className="w-4 h-4" />
+                            Connect Database
+                        </button>
+                        <span>•</span>
+                        <button className="hover:text-accent transition-colors flex items-center gap-1.5">
+                            <Plus className="w-4 h-4" />
+                            Connect Cloud Storage
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
+        </div >
     );
 }
