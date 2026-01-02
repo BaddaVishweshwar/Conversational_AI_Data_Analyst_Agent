@@ -16,6 +16,7 @@ import RegisterPage from './pages/RegisterPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import SettingsPage from './pages/SettingsPage'
+import SavedInsightsPage from './pages/SavedInsightsPage'
 import HistoryPage from './pages/HistoryPage'
 
 const queryClient = new QueryClient({
@@ -46,6 +47,7 @@ function App() {
                         <Route path="/datasets" element={<ProtectedRoute><MainLayout><DatasetPage /></MainLayout></ProtectedRoute>} />
                         <Route path="/connections" element={<ProtectedRoute><MainLayout><ConnectionsPage /></MainLayout></ProtectedRoute>} />
                         <Route path="/history" element={<ProtectedRoute><MainLayout><HistoryPage /></MainLayout></ProtectedRoute>} />
+                        <Route path="/saved" element={<ProtectedRoute><MainLayout><SavedInsightsPage /></MainLayout></ProtectedRoute>} />
                         <Route path="/settings" element={<ProtectedRoute><MainLayout><SettingsPage /></MainLayout></ProtectedRoute>} />
                         <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
 
