@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
     ArrowRight, Sparkles, Zap, Shield, TrendingUp,
@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useEffect, useRef, useState } from 'react';
-import { ContainerScroll } from '../components/ui/container-scroll-animation';
 
 export default function LandingPage() {
     const navigate = useNavigate();
@@ -89,7 +88,7 @@ export default function LandingPage() {
                         <Button
                             variant="ghost"
                             onClick={() => navigate('/login')}
-                            className="text-white hover:text-accent"
+                            className="text-white hover:text-white hover:bg-white/10"
                         >
                             Sign In
                         </Button>
@@ -113,8 +112,8 @@ export default function LandingPage() {
                     }}
                 >
                     <div className="absolute inset-0" style={{
-                        backgroundImage: `linear - gradient(to right, #00bfa5 1px, transparent 1px),
-    linear - gradient(to bottom, #00bfa5 1px, transparent 1px)`,
+                        backgroundImage: `linear-gradient(to right, #00bfa5 1px, transparent 1px),
+                                        linear-gradient(to bottom, #00bfa5 1px, transparent 1px)`,
                         backgroundSize: '80px 80px'
                     }} />
                 </motion.div>
@@ -284,33 +283,27 @@ export default function LandingPage() {
                 </div>
             </section >
 
-            {/* Features Scroll Animation */}
-            <section className="relative">
-                <ContainerScroll
-                    titleComponent={
-                        <div className="text-center mb-20">
-                            <h2 className="text-5xl font-bold mb-6">
-                                <span className="bg-gradient-to-r from-accent to-emerald-400 bg-clip-text text-transparent">
-                                    Powerful Features
-                                </span>
-                            </h2>
-                            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-                                Everything you need to turn your data into actionable insights
-                            </p>
-                        </div>
-                    }
-                >
-                    <img
-                        src="/artifacts/analytics_conversation_1767379761697.png"
-                        alt="AI Analytics - Ask questions and get instant insights"
-                        className="mx-auto rounded-2xl object-cover h-full w-full object-left-top"
-                        draggable={false}
-                    />
-                </ContainerScroll>
+            {/* Features Grid */}
+            < section className="py-32 relative" >
+                <div className="max-w-7xl mx-auto px-6">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8 }}
+                        className="text-center mb-20"
+                    >
+                        <h2 className="text-5xl font-bold mb-6">
+                            <span className="bg-gradient-to-r from-accent to-emerald-400 bg-clip-text text-transparent">
+                                Powerful Features
+                            </span>
+                        </h2>
+                        <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+                            Everything you need to turn your data into actionable insights
+                        </p>
+                    </motion.div>
 
-                {/* Feature Cards Below */}
-                <div className="max-w-7xl mx-auto px-6 pb-32">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 -mt-64">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {features.map((feature, index) => (
                             <motion.div
                                 key={index}
@@ -322,10 +315,10 @@ export default function LandingPage() {
                                 className="group relative p-8 rounded-2xl bg-gradient-to-br from-white/5 to-white/0 border border-white/10 hover:border-accent/30 transition-all duration-300 overflow-hidden"
                             >
                                 {/* Hover Gradient */}
-                                <div className={`absolute inset - 0 bg - gradient - to - br ${feature.color} opacity - 0 group - hover: opacity - 10 transition - opacity duration - 300`} />
+                                <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
 
                                 <div className="relative">
-                                    <div className={`w - 14 h - 14 rounded - xl bg - gradient - to - br ${feature.color} flex items - center justify - center mb - 6 group - hover: scale - 110 transition - transform duration - 300`}>
+                                    <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
                                         <feature.icon className="w-7 h-7 text-black" />
                                     </div>
 
@@ -341,7 +334,7 @@ export default function LandingPage() {
                         ))}
                     </div>
                 </div>
-            </section>
+            </section >
 
             {/* CTA Section */}
             < section className="py-32 relative overflow-hidden" >
