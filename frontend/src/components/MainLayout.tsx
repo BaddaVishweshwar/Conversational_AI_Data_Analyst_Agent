@@ -25,8 +25,7 @@ interface NavItem {
 const navItems: NavItem[] = [
     { name: 'Chat', icon: MessageSquare, path: '/analytics' },
     { name: 'Dashboards', icon: LayoutDashboard, path: '/dashboard' },
-    { name: ' History', icon: History, path: '/history' },
-    { name: 'Saved Insights', icon: BookmarkPlus, path: '/saved' },
+    { name: 'History', icon: History, path: '/history' },
 ];
 
 export default function MainLayout() {
