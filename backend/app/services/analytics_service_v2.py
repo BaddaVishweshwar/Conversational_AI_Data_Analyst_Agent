@@ -399,6 +399,15 @@ class AnalyticsServiceV2:
             query_requirements=requirements,
             analysis_plan=plan,
             execution_result=execution_result,
+            interpretation=InterpretationResult(
+                title="Error",
+                main_finding=error,
+                outliers=[],
+                trends=[],
+                top_contributors=[],
+                correlations=[],
+                warnings=[error]
+            ),
             visualization=visualization,
             insights=insights,
             reasoning_steps=[f"Error: {error}"],
