@@ -50,11 +50,23 @@ export default function MainLayout({ children }: MainLayoutProps) {
         loadDatasets();
     }, []);
 
+    // Read dataset from URL query parameter
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const datasetId = params.get('dataset');
+        if (datasetId) {
+            setSelectedDataset(Number(datasetId));
+        }
+    }, [location.search]);
+
     const loadDatasets = async () => {
         try {
             const response = await datasetsAPI.list();
             setDatasets(response.data);
-            if (response.data.length > 0 && !selectedDataset) {
+            // Only set default if no dataset in URL
+            const params = new URLSearchParams(location.search);
+            const datasetId = params.get('dataset');
+            if (response.data.length > 0 && !selectedDataset && !datasetId) {
                 setSelectedDataset(response.data[0].id);
             }
         } catch (error) {
