@@ -143,12 +143,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
                                 key={item.path}
                                 to={item.path}
                                 className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${isActive
-                                    ? 'bg-muted text-foreground'
-                                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                                        ? 'bg-accent/10 text-accent border-l-2 border-accent shadow-[0_0_10px_rgba(0,191,165,0.3)]'
+                                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                                     }`}
                             >
-                                <Icon className="w-5 h-5 shrink-0" />
-                                <span className="text-sm font-medium">{item.name}</span>
+                                <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-accent' : ''}`} />
+                                <span className={`text-sm font-medium ${isActive ? 'font-semibold' : ''}`}>{item.name}</span>
                             </Link>
                         );
                     })}
