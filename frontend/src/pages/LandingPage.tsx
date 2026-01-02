@@ -1,3 +1,4 @@
+```
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -6,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useEffect, useRef, useState } from 'react';
+import { ContainerScroll } from '../components/ui/container-scroll-animation';
 
 export default function LandingPage() {
     const navigate = useNavigate();
@@ -112,8 +114,8 @@ export default function LandingPage() {
                     }}
                 >
                     <div className="absolute inset-0" style={{
-                        backgroundImage: `linear-gradient(to right, #00bfa5 1px, transparent 1px),
-                                        linear-gradient(to bottom, #00bfa5 1px, transparent 1px)`,
+                        backgroundImage: `linear - gradient(to right, #00bfa5 1px, transparent 1px),
+    linear - gradient(to bottom, #00bfa5 1px, transparent 1px)`,
                         backgroundSize: '80px 80px'
                     }} />
                 </motion.div>
@@ -283,155 +285,64 @@ export default function LandingPage() {
                 </div>
             </section >
 
-            {/* Features Grid */}
-            <section className="py-32 relative">
-                {/* Animated Background Lines */}
-                <motion.div
-                    className="absolute inset-0 opacity-5"
-                    initial={{ x: 0 }}
-                    animate={{ x: [0, 100, 0] }}
-                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            {/* Features Scroll Animation */}
+            <section className="relative">
+                <ContainerScroll
+                    titleComponent={
+                        <div className="text-center mb-20">
+                            <h2 className="text-5xl font-bold mb-6">
+                                <span className="bg-gradient-to-r from-accent to-emerald-400 bg-clip-text text-transparent">
+                                    Powerful Features
+                                </span>
+                            </h2>
+                            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+                                Everything you need to turn your data into actionable insights
+                            </p>
+                        </div>
+                    }
                 >
-                    <div className="absolute inset-0" style={{
-                        backgroundImage: 'repeating-linear-gradient(90deg, #00bfa5 0px, #00bfa5 1px, transparent 1px, transparent 100px)',
-                    }} />
-                </motion.div>
+                    <img
+                        src="/api/placeholder/1400/900"
+                        alt="AI Analytics Dashboard"
+                        className="mx-auto rounded-2xl object-cover h-full w-full object-left-top"
+                        draggable={false}
+                    />
+                </ContainerScroll>
 
-                <div className="max-w-7xl mx-auto px-6">
-                    <motion.div
-                        initial={{ opacity: 0, y: 50 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, amount: 0.3 }}
-                        transition={{ duration: 0.8 }}
-                        className="text-center mb-20"
-                    >
-                        <motion.h2
-                            className="text-5xl font-bold mb-6"
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.6 }}
-                        >
-                            <span className="bg-gradient-to-r from-accent to-emerald-400 bg-clip-text text-transparent">
-                                Powerful Features
-                            </span>
-                        </motion.h2>
-                        <motion.p
-                            className="text-xl text-gray-400 max-w-2xl mx-auto"
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.6, delay: 0.2 }}
-                        >
-                            Everything you need to turn your data into actionable insights
-                        </motion.p>
-                    </motion.div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {/* Feature Cards Below */}
+                <div className="max-w-7xl mx-auto px-6 pb-32">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 -mt-64">
                         {features.map((feature, index) => (
                             <motion.div
                                 key={index}
-                                initial={{
-                                    opacity: 0,
-                                    y: 50,
-                                    rotateX: 45,
-                                    scale: 0.9
-                                }}
-                                whileInView={{
-                                    opacity: 1,
-                                    y: 0,
-                                    rotateX: 0,
-                                    scale: 1
-                                }}
-                                viewport={{ once: true, amount: 0.3 }}
-                                transition={{
-                                    delay: index * 0.15,
-                                    duration: 0.7,
-                                    ease: [0.25, 0.4, 0.25, 1]
-                                }}
-                                whileHover={{
-                                    y: -10,
-                                    scale: 1.03,
-                                    rotateY: 5,
-                                    transition: { duration: 0.3 }
-                                }}
-                                className="group relative p-8 rounded-2xl bg-gradient-to-br from-white/5 to-white/0 border border-white/10 hover:border-accent/30 transition-all duration-300 overflow-hidden perspective-1000"
-                                style={{
-                                    transformStyle: 'preserve-3d',
-                                }}
+                                initial={{ opacity: 0, y: 30 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: index * 0.1, duration: 0.5 }}
+                                whileHover={{ y: -5, scale: 1.02 }}
+                                className="group relative p-8 rounded-2xl bg-gradient-to-br from-white/5 to-white/0 border border-white/10 hover:border-accent/30 transition-all duration-300 overflow-hidden"
                             >
-                                {/* Hover Gradient with Animation */}
-                                <motion.div
-                                    className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 transition-opacity duration-300`}
-                                    whileHover={{ opacity: 0.1 }}
-                                />
+                                {/* Hover Gradient */}
+                                <div className={`absolute inset - 0 bg - gradient - to - br ${ feature.color } opacity - 0 group - hover: opacity - 10 transition - opacity duration - 300`} />
 
-                                {/* Shimmer Effect */}
-                                <motion.div
-                                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                                    initial={false}
-                                    animate={{
-                                        backgroundPosition: ['200% 0', '-200% 0'],
-                                    }}
-                                    transition={{
-                                        duration: 2,
-                                        repeat: Infinity,
-                                        ease: "linear"
-                                    }}
-                                    style={{
-                                        background: 'linear-gradient(90deg, transparent, rgba(0,191,165,0.1), transparent)',
-                                        backgroundSize: '200% 100%',
-                                    }}
-                                />
-
-                                <div className="relative z-10">
-                                    <motion.div
-                                        className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-6`}
-                                        whileHover={{
-                                            rotate: 360,
-                                            scale: 1.1
-                                        }}
-                                        transition={{
-                                            rotate: { duration: 0.6 },
-                                            scale: { duration: 0.3 }
-                                        }}
-                                    >
+                                <div className="relative">
+                                    <div className={`w - 14 h - 14 rounded - xl bg - gradient - to - br ${ feature.color } flex items - center justify - center mb - 6 group - hover: scale - 110 transition - transform duration - 300`}>
                                         <feature.icon className="w-7 h-7 text-black" />
-                                    </motion.div>
+                                    </div>
 
-                                    <motion.h3
-                                        className="text-2xl font-semibold mb-3 text-white group-hover:text-accent transition-colors"
-                                        initial={{ x: -20, opacity: 0 }}
-                                        whileInView={{ x: 0, opacity: 1 }}
-                                        viewport={{ once: true }}
-                                        transition={{ delay: index * 0.15 + 0.2, duration: 0.5 }}
-                                    >
+                                    <h3 className="text-2xl font-semibold mb-3 text-white group-hover:text-accent transition-colors">
                                         {feature.title}
-                                    </motion.h3>
+                                    </h3>
 
-                                    <motion.p
-                                        className="text-gray-400"
-                                        initial={{ x: -20, opacity: 0 }}
-                                        whileInView={{ x: 0, opacity: 1 }}
-                                        viewport={{ once: true }}
-                                        transition={{ delay: index * 0.15 + 0.3, duration: 0.5 }}
-                                    >
+                                    <p className="text-gray-400">
                                         {feature.description}
-                                    </motion.p>
+                                    </p>
                                 </div>
-
-                                {/* Corner Accent */}
-                                <motion.div
-                                    className="absolute top-0 right-0 w-20 h-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                                    style={{
-                                        background: `radial-gradient(circle at top right, ${feature.color.includes('accent') ? 'rgba(0,191,165,0.2)' : 'rgba(16,185,129,0.2)'}, transparent)`,
-                                    }}
-                                />
                             </motion.div>
                         ))}
                     </div>
                 </div>
-            </section>
+            </section> >
 
             {/* CTA Section */}
             < section className="py-32 relative overflow-hidden" >
