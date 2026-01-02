@@ -1,5 +1,4 @@
-```
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
     ArrowRight, Sparkles, Zap, Shield, TrendingUp,
@@ -323,10 +322,10 @@ export default function LandingPage() {
                                 className="group relative p-8 rounded-2xl bg-gradient-to-br from-white/5 to-white/0 border border-white/10 hover:border-accent/30 transition-all duration-300 overflow-hidden"
                             >
                                 {/* Hover Gradient */}
-                                <div className={`absolute inset - 0 bg - gradient - to - br ${ feature.color } opacity - 0 group - hover: opacity - 10 transition - opacity duration - 300`} />
+                                <div className={`absolute inset - 0 bg - gradient - to - br ${feature.color} opacity - 0 group - hover: opacity - 10 transition - opacity duration - 300`} />
 
                                 <div className="relative">
-                                    <div className={`w - 14 h - 14 rounded - xl bg - gradient - to - br ${ feature.color } flex items - center justify - center mb - 6 group - hover: scale - 110 transition - transform duration - 300`}>
+                                    <div className={`w - 14 h - 14 rounded - xl bg - gradient - to - br ${feature.color} flex items - center justify - center mb - 6 group - hover: scale - 110 transition - transform duration - 300`}>
                                         <feature.icon className="w-7 h-7 text-black" />
                                     </div>
 
