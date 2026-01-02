@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Send, Sparkles, ChevronDown, ChevronRight, Database } from 'lucide-react';
+import { Send, Sparkles, ChevronDown, ChevronRight, BarChart3, Table2, MapPin, FileText, Plus } from 'lucide-react';
 import { datasetsAPI } from '../lib/api';
 import { conversationsAPI } from '../lib/conversationsAPI';
 import { Button } from '../components/ui/button';
@@ -14,9 +13,8 @@ interface Message {
 }
 
 export default function AnalyticsPage() {
-    const location = useLocation();
     const [datasets, setDatasets] = useState<any[]>([]);
-    const [selectedDataset, setSelectedDataset] = useState<number | null>(location.state?.datasetId || null);
+    const [selectedDataset, setSelectedDataset] = useState<number | null>(null);
     const [query, setQuery] = useState('');
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(false);
@@ -54,6 +52,7 @@ export default function AnalyticsPage() {
         try {
             const response = await conversationsAPI.create(selectedDataset);
             setCurrentConversation(response.data);
+            setMessages([]);
         } catch (error) {
             console.error('Error creating conversation:', error);
         }
@@ -73,24 +72,13 @@ export default function AnalyticsPage() {
             const response = await conversationsAPI.sendMessage(currentConversation.id, userQuery);
             const messageData = response.data;
 
-            // Map backend response to Camel.ai structure
             const assistantMessage: Message = {
                 role: 'assistant',
                 content: {
-                    // CamelAI-grade fields from backend
-                    understanding: messageData.query_data?.understanding,
-                    approach: messageData.query_data?.approach,
-                    exploratorySteps: messageData.query_data?.exploratory_steps,
-
-                    // Direct answer from insights
                     directAnswer: messageData.content || "Analysis complete.",
-
-                    // SQL and data
                     sql: messageData.query_data?.generated_sql,
                     resultData: messageData.query_data?.result_data,
                     columns: messageData.query_data?.columns,
-
-                    // Visualization
                     visualization: messageData.query_data?.visualization ? {
                         type: messageData.query_data.visualization.type,
                         xAxis: messageData.query_data.visualization.x_axis,
@@ -98,10 +86,6 @@ export default function AnalyticsPage() {
                         data: messageData.query_data.result_data,
                         columns: messageData.query_data.columns
                     } : null,
-
-                    // Processing steps for explanation
-                    processingSteps: messageData.processing_steps,
-                    executionTime: messageData.query_data?.execution_time_ms
                 }
             };
 
@@ -122,12 +106,13 @@ export default function AnalyticsPage() {
 
     const handlePromptClick = (prompt: string) => {
         setQuery(prompt);
-        // Auto-submit
-        setTimeout(() => {
-            const form = document.querySelector('form');
-            form?.requestSubmit();
-        }, 100);
     };
+
+    const suggestionChips = [
+        { icon: BarChart3, text: 'Compare sales vs ad spend' },
+        { icon: Table2, text: 'Join customers with orders' },
+        { icon: MapPin, text: 'Find anomalies by region' },
+    ];
 
     return (
         <div className="h-full flex flex-col bg-background">
@@ -137,8 +122,9 @@ export default function AnalyticsPage() {
                     <AnimatePresence mode="popLayout">
                         {messages.length === 0 ? (
                             <EmptyState
+                                datasets={datasets}
                                 onSelectPrompt={handlePromptClick}
-                                hasDataset={!!selectedDataset}
+                                suggestionChips={suggestionChips}
                             />
                         ) : (
                             messages.map((message, idx) => (
@@ -153,28 +139,34 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Input Bar - Fixed at Bottom */}
-            <div className="border-t border-border bg-card/50 backdrop-blur-sm">
+            <div className="border-t border-border bg-background/95 backdrop-blur-sm">
                 <div className="max-w-4xl mx-auto px-6 py-4">
                     <form onSubmit={handleSubmit} className="relative">
-                        <input
-                            type="text"
+                        <textarea
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSubmit(e);
+                                }
+                            }}
                             placeholder="Ask about trends, comparisons, anomalies..."
                             disabled={loading || !selectedDataset}
-                            className="w-full px-5 py-3.5 pr-14 bg-muted border border-border rounded-xl text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all disabled:opacity-50"
+                            rows={1}
+                            className="w-full px-5 py-3.5 pr-14 bg-muted/50 border border-border rounded-xl text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent/20 transition-all resize-none disabled:opacity-50"
                         />
                         <Button
                             type="submit"
                             size="sm"
                             disabled={loading || !query.trim() || !selectedDataset}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-accent hover:bg-accent/90"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg bg-accent hover:bg-accent/90 text-white p-2"
                         >
                             <Send className="w-4 h-4" />
                         </Button>
                     </form>
                     <p className="text-xs text-center text-muted-foreground mt-2">
-                        {selectedDataset ? 'Your data stays private. No training on your data.' : 'Select a dataset to start'}
+                        Shift+Enter to add a line
                     </p>
                 </div>
             </div>
@@ -183,30 +175,7 @@ export default function AnalyticsPage() {
 }
 
 // Empty State Component
-function EmptyState({ onSelectPrompt, hasDataset }: { onSelectPrompt: (prompt: string) => void, hasDataset: boolean }) {
-    const prompts = [
-        "Summarize this dataset with key statistics",
-        "What are the main trends this quarter?",
-        "Find any unusual patterns or anomalies",
-        "Compare performance across categories"
-    ];
-
-    if (!hasDataset) {
-        return (
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4"
-            >
-                <Database className="w-16 h-16 text-muted-foreground/30 mb-4" />
-                <h2 className="text-xl font-semibold mb-2 text-foreground">No dataset selected</h2>
-                <p className="text-sm text-muted-foreground">
-                    Select a dataset from the top bar to start analyzing
-                </p>
-            </motion.div>
-        );
-    }
-
+function EmptyState({ datasets, onSelectPrompt, suggestionChips }: any) {
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -214,33 +183,52 @@ function EmptyState({ onSelectPrompt, hasDataset }: { onSelectPrompt: (prompt: s
             className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4"
         >
             <div className="mb-8">
-                <h1 className="text-3xl font-semibold mb-3 text-foreground">
+                <h1 className="text-4xl font-semibold mb-4 text-foreground">
                     Ask your data anything
                 </h1>
-                <p className="text-muted-foreground text-sm max-w-md">
-                    Powered by your dataset, not assumptions
+                <p className="text-muted-foreground text-base mb-2">
+                    You're analyzing {datasets.length} dataset{datasets.length !== 1 ? 's' : ''}.
+                </p>
+                <p className="text-muted-foreground text-sm">
+                    Ask questions across them or focus on one:
                 </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 w-full max-w-2xl">
-                {prompts.map((prompt, i) => (
-                    <button
-                        key={i}
-                        onClick={() => onSelectPrompt(prompt)}
-                        className="px-4 py-3 text-left text-sm border border-border rounded-lg hover:bg-muted/50 hover:border-accent/30 transition-all text-foreground"
-                    >
-                        {prompt}
-                    </button>
-                ))}
+            {/* Suggestion Chips */}
+            <div className="flex flex-wrap gap-3 justify-center mb-8 max-w-2xl">
+                {suggestionChips.map((chip: any, i: number) => {
+                    const Icon = chip.icon;
+                    return (
+                        <button
+                            key={i}
+                            onClick={() => onSelectPrompt(chip.text)}
+                            className="flex items-center gap-2 px-4 py-2.5 text-sm border border-border rounded-lg hover:bg-muted/50 hover:border-accent/30 transition-all text-foreground bg-card"
+                        >
+                            <Icon className="w-4 h-4 text-muted-foreground" />
+                            <span>{chip.text}</span>
+                        </button>
+                    );
+                })}
             </div>
+
+            {/* Dataset Info Link */}
+            {datasets.length > 0 && (
+                <button
+                    onClick={() => onSelectPrompt(`Show me ${datasets[0].name} info`)}
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-accent transition-colors"
+                >
+                    <FileText className="w-4 h-4" />
+                    <span>Show me {datasets[0].name} info</span>
+                    <ChevronRight className="w-3 h-3" />
+                </button>
+            )}
         </motion.div>
     );
 }
 
-// Message Bubble Component
+// Message Bubble Component  
 function MessageBubble({ message }: { message: Message }) {
     const [sqlExpanded, setSqlExpanded] = useState(false);
-    const [stepsExpanded, setStepsExpanded] = useState(false);
 
     if (message.role === 'user') {
         return (
@@ -270,14 +258,6 @@ function MessageBubble({ message }: { message: Message }) {
                 </div>
 
                 <div className="flex-1 space-y-4">
-                    {/* CamelAI-grade: Understanding & Approach */}
-                    {content.understanding && (
-                        <div className="text-sm text-muted-foreground italic">
-                            Understanding: {content.understanding}
-                        </div>
-                    )}
-
-                    {/* a. Direct Answer */}
                     {content.directAnswer && (
                         <div className="prose prose-invert max-w-none">
                             <ReactMarkdown className="text-foreground text-base leading-relaxed">
@@ -286,30 +266,6 @@ function MessageBubble({ message }: { message: Message }) {
                         </div>
                     )}
 
-                    {/* CamelAI-grade: Exploratory Steps */}
-                    {content.exploratorySteps && content.exploratorySteps.length > 0 && (
-                        <div className="border border-border rounded-lg overflow-hidden bg-card">
-                            <button
-                                onClick={() => setStepsExpanded(!stepsExpanded)}
-                                className="w-full px-4 py-2.5 flex items-center justify-between text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
-                            >
-                                <span className="font-medium">Exploratory Analysis ({content.exploratorySteps.length} steps)</span>
-                                {stepsExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                            </button>
-                            {stepsExpanded && (
-                                <div className="px-4 py-3 border-t border-border space-y-3">
-                                    {content.exploratorySteps.map((step: any, i: number) => (
-                                        <div key={i} className="text-xs">
-                                            <div className="font-medium text-foreground mb-1">{step.question}</div>
-                                            <div className="text-muted-foreground">{step.finding}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* b. Generated SQL (Collapsible) */}
                     {content.sql && (
                         <div className="border border-border rounded-lg overflow-hidden bg-card">
                             <button
@@ -329,7 +285,6 @@ function MessageBubble({ message }: { message: Message }) {
                         </div>
                     )}
 
-                    {/* c. Result Table */}
                     {content.resultData && content.resultData.length > 0 && (
                         <div className="border border-border rounded-lg overflow-hidden">
                             <div className="px-4 py-2 bg-muted/30 border-b border-border">
@@ -342,9 +297,7 @@ function MessageBubble({ message }: { message: Message }) {
                                     <thead>
                                         <tr>
                                             {content.columns?.map((col: string) => (
-                                                <th key={col}>
-                                                    {col}
-                                                </th>
+                                                <th key={col}>{col}</th>
                                             ))}
                                         </tr>
                                     </thead>
@@ -364,17 +317,9 @@ function MessageBubble({ message }: { message: Message }) {
                         </div>
                     )}
 
-                    {/* d. Visualization */}
                     {content.visualization && content.visualization.data && content.visualization.data.length > 0 && (
                         <div className="border border-border rounded-lg p-4 bg-card">
                             <ChartRenderer config={content.visualization} />
-                        </div>
-                    )}
-
-                    {/* Execution time */}
-                    {content.executionTime && (
-                        <div className="text-xs text-muted-foreground">
-                            Executed in {content.executionTime}ms
                         </div>
                     )}
                 </div>

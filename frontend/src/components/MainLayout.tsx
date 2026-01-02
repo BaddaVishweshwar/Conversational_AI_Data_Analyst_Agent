@@ -7,11 +7,12 @@ import {
     BookmarkPlus,
     Settings,
     LogOut,
-    ChevronLeft,
-    ChevronRight,
     Database,
     User,
-    FolderOpen
+    FolderOpen,
+    Plus,
+    RefreshCw,
+    Grid3x3
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { datasetsAPI } from '../lib/api';
@@ -25,16 +26,15 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     { name: 'Chat', icon: MessageSquare, path: '/analytics' },
-    { name: 'Datasets', icon: FolderOpen, path: '/datasets' },
     { name: 'Dashboards', icon: LayoutDashboard, path: '/dashboard' },
     { name: 'History', icon: History, path: '/history' },
+    { name: 'Saved Insights', icon: BookmarkPlus, path: '/saved' },
 ];
 
 export default function MainLayout() {
-    const { user, logout } = useAuthStore();
+    const { logout } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();
-    const [sidebarOpen, setSidebarOpen] = useState(true);
     const [datasets, setDatasets] = useState<any[]>([]);
     const [selectedDataset, setSelectedDataset] = useState<number | null>(null);
 
@@ -46,7 +46,7 @@ export default function MainLayout() {
         try {
             const response = await datasetsAPI.list();
             setDatasets(response.data);
-            if (response.data.length > 0) {
+            if (response.data.length > 0 && !selectedDataset) {
                 setSelectedDataset(response.data[0].id);
             }
         } catch (error) {
@@ -61,28 +61,15 @@ export default function MainLayout() {
 
     return (
         <div className="flex h-screen bg-background overflow-hidden">
-            {/* Left Sidebar - Collapsible */}
-            <div
-                className={`${sidebarOpen ? 'w-64' : 'w-16'
-                    } transition-all duration-300 border-r border-border bg-card flex flex-col`}
-            >
+            {/* Left Sidebar */}
+            <div className="w-64 border-r border-border bg-background flex flex-col">
                 {/* Sidebar Header */}
-                <div className="h-16 border-b border-border flex items-center justify-between px-4">
-                    {sidebarOpen && (
-                        <h1 className="text-lg font-semibold text-foreground">AI Analyst</h1>
-                    )}
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="p-2"
-                    >
-                        {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                    </Button>
+                <div className="h-14 border-b border-border flex items-center px-4">
+                    <h1 className="text-lg font-semibold text-foreground">AI Analyst</h1>
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 py-6 px-2 space-y-1">
+                <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = location.pathname === item.path;
@@ -91,85 +78,103 @@ export default function MainLayout() {
                             <Link
                                 key={item.path}
                                 to={item.path}
-                                className={`
-                  flex items-center gap-3 px-3 py-2 rounded-lg transition-all
-                  ${isActive
-                                        ? 'bg-accent/10 text-accent'
-                                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                                    }
-                  ${!sidebarOpen && 'justify-center'}
-                `}
+                                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm ${isActive
+                                    ? 'bg-accent/10 text-accent'
+                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                                    }`}
                             >
-                                <Icon className="w-5 h-5 shrink-0" />
-                                {sidebarOpen && <span className="text-sm font-medium">{item.name}</span>}
+                                <Icon className="w-4 h-4 shrink-0" />
+                                <span className="font-medium">{item.name}</span>
                             </Link>
                         );
                     })}
+
+                    {/* DATASETS Section */}
+                    <div className="pt-4">
+                        <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            Datasets
+                        </div>
+                        <div className="space-y-1">
+                            {datasets.map((dataset) => (
+                                <Link
+                                    key={dataset.id}
+                                    to={`/datasets`}
+                                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                                >
+                                    <Database className="w-4 h-4 shrink-0" />
+                                    <span className="truncate">{dataset.name}</span>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
                 </nav>
 
                 {/* Sidebar Footer */}
-                <div className="border-t border-border p-2 space-y-1">
+                <div className="border-t border-border p-3 space-y-1">
                     <Link
                         to="/settings"
-                        className={`
-              flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all
-              ${!sidebarOpen && 'justify-center'}
-            `}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
                     >
-                        <Settings className="w-5 h-5 shrink-0" />
-                        {sidebarOpen && <span className="text-sm font-medium">Settings</span>}
+                        <Settings className="w-4 h-4 shrink-0" />
+                        <span className="font-medium">Settings</span>
                     </Link>
                     <button
                         onClick={handleLogout}
-                        className={`
-              w-full flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all
-              ${!sidebarOpen && 'justify-center'}
-            `}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
                     >
-                        <LogOut className="w-5 h-5 shrink-0" />
-                        {sidebarOpen && <span className="text-sm font-medium">Logout</span>}
+                        <LogOut className="w-4 h-4 shrink-0" />
+                        <span className="font-medium">Logout</span>
                     </button>
                 </div>
             </div>
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0">
-                {/* Top Navbar - Sticky */}
-                <div className="h-16 border-b border-border flex items-center justify-between px-6 glass sticky top-0 z-10">
-                    {/* Left: Product Logo */}
-                    <Link to="/" className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-                            <Database className="w-5 h-5 text-accent" />
-                        </div>
-                        <span className="text-sm font-semibold text-foreground">AI Data Analyst</span>
-                    </Link>
-
-                    {/* Center: Dataset Selector (Pill Style) */}
-                    <div className="flex-1 max-w-md mx-auto">
-                        <select
-                            value={selectedDataset || ''}
-                            onChange={(e) => setSelectedDataset(Number(e.target.value))}
-                            className="w-full px-4 py-2 bg-muted border border-border rounded-full text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/20"
-                        >
-                            <option value="">Select Dataset...</option>
-                            {datasets.map((dataset) => (
-                                <option key={dataset.id} value={dataset.id}>
-                                    {dataset.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Right: User Controls */}
-                    <div className="flex items-center gap-4">
-                        <Link to="/settings">
-                            <Button variant="ghost" size="sm" className="p-2">
-                                <Settings className="w-5 h-5" />
+                {/* Top Navbar with Dataset Tabs */}
+                <div className="h-14 border-b border-border flex items-center justify-between px-4 bg-background">
+                    {/* Dataset Tabs */}
+                    <div className="flex items-center gap-2 flex-1 overflow-x-auto">
+                        {datasets.slice(0, 3).map((dataset) => (
+                            <button
+                                key={dataset.id}
+                                onClick={() => setSelectedDataset(dataset.id)}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all whitespace-nowrap ${selectedDataset === dataset.id
+                                    ? 'bg-accent/10 text-accent border border-accent/20'
+                                    : 'text-muted-foreground hover:bg-muted border border-transparent'
+                                    }`}
+                            >
+                                <Database className="w-3.5 h-3.5" />
+                                <span>{dataset.name}</span>
+                            </button>
+                        ))}
+                        <Link to="/datasets">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-muted-foreground hover:text-foreground"
+                            >
+                                <Plus className="w-4 h-4 mr-1" />
+                                Add Dataset
                             </Button>
                         </Link>
-                        <button className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
-                            <User className="w-4 h-4 text-accent" />
-                        </button>
+                    </div>
+
+                    {/* Right Controls */}
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" className="p-2">
+                            <Settings className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="p-2">
+                            <RefreshCw className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="p-2">
+                            <Grid3x3 className="w-4 h-4" />
+                        </Button>
+                        <Link to="/settings">
+                            <button className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center">
+                                <User className="w-4 h-4 text-accent" />
+                            </button>
+                        </Link>
                     </div>
                 </div>
 
