@@ -1,0 +1,114 @@
+import axios from 'axios';
+
+const API_BASE_URL = '/api';
+
+export const api = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
+// Request interceptor to add auth token
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+// Response interceptor to handle token refresh
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config;
+
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
+
+            try {
+                const refreshToken = localStorage.getItem('refresh_token');
+                const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+                    refresh_token: refreshToken,
+                });
+
+                const { access_token, refresh_token } = response.data;
+                localStorage.setItem('access_token', access_token);
+                localStorage.setItem('refresh_token', refresh_token);
+
+                originalRequest.headers.Authorization = `Bearer ${access_token}`;
+                return api(originalRequest);
+            } catch (refreshError) {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                window.location.href = '/login';
+                return Promise.reject(refreshError);
+            }
+        }
+
+        return Promise.reject(error);
+    }
+);
+
+// API functions
+export const authAPI = {
+    register: (data: { email: string; username: string; password: string }) =>
+        api.post('/auth/register', data),
+    login: (data: { email: string; password: string }) =>
+        api.post('/auth/login', data),
+    googleLogin: (data: { id_token: string }) =>
+        api.post('/auth/google', data),
+    getMe: () => api.get('/auth/me'),
+};
+
+export const datasetsAPI = {
+    upload: (file: File, name?: string) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (name) formData.append('name', name);
+        return api.post('/datasets/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+    list: () => api.get('/datasets/'),
+    get: (id: number) => api.get(`/datasets/${id}`),
+    delete: (id: number) => api.delete(`/datasets/${id}`),
+    getEDA: (id: number) => api.get(`/datasets/${id}/eda`),
+    createFromConnection: (data: { name: string; connection_id: number; table_name?: string }) =>
+        api.post('/datasets/from-connection', data),
+};
+
+export const queriesAPI = {
+    ask: (data: { dataset_id: number; query: string; session_id?: string }) => api.post('/queries/ask', data),
+    execute: (data: { dataset_id: number; sql: string }) => api.post('/queries/execute', data),
+    update: (id: number, data: any) => api.patch(`/queries/${id}`, data),
+    history: (limit = 50, datasetId?: number, order?: 'asc' | 'desc', sessionId?: string) =>
+        api.get(`/queries/history`, { params: { limit, dataset_id: datasetId, order, session_id: sessionId } }),
+    getSessions: (datasetId?: number) => api.get('/queries/sessions', { params: { dataset_id: datasetId } }),
+    deleteSession: (sessionId: string) => api.delete(`/queries/sessions/${sessionId}`),
+    retryQuery: (queryId: number) => api.post(`/queries/${queryId}/retry`),
+    get: (id: number) => api.get(`/queries/${id}`),
+};
+
+export const connectionsAPI = {
+    list: () => api.get('/connections/'),
+    create: (data: any) => api.post('/connections/', data),
+    test: (id: number) => api.post(`/connections/${id}/test`),
+    delete: (id: number) => api.delete(`/connections/${id}`),
+    getTables: (id: number) => api.get(`/connections/${id}/tables`),
+};
+
+export const dashboardsAPI = {
+    list: () => api.get('/dashboards/'),
+    get: (id: number) => api.get(`/dashboards/${id}`),
+    create: (data: any) => api.post('/dashboards/', data),
+    update: (id: number, data: any) => api.patch(`/dashboards/${id}`, data),
+    delete: (id: number) => api.delete(`/dashboards/${id}`),
+    addWidget: (id: number, widget: any) => api.post(`/dashboards/${id}/widgets`, widget),
+};
