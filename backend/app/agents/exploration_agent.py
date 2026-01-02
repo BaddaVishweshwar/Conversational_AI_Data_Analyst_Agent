@@ -174,21 +174,18 @@ class ExplorationAgent:
             execution_time_ms=execution_time_ms
         )
     
+    
     def _extract_json(self, text: str) -> Dict[str, Any]:
-        """Extract JSON from LLM response"""
-        # Remove markdown
-        if "```json" in text:
-            text = text.split("```json")[1].split("```")[0].strip()
-        elif "```" in text:
-            text = text.split("```")[1].split("```")[0].strip()
+        """Extract JSON from LLM response using robust utility"""
+        from ...utils.json_extractor import extract_json_from_llm_response
         
-        # Find JSON object
-        first_brace = text.find("{")
-        last_brace = text.rfind("}")
-        if first_brace != -1 and last_brace != -1:
-            text = text[first_brace:last_brace+1]
+        fallback = {
+            "sql": "SELECT COUNT(*) FROM data",
+            "explanation": "Basic query",
+            "expected_rows": 1
+        }
         
-        return json.loads(text)
+        return extract_json_from_llm_response(text, fallback=fallback)
     
     def _format_sample_data(self, df: pd.DataFrame, max_rows: int = 3) -> str:
         """Format sample data as markdown table"""

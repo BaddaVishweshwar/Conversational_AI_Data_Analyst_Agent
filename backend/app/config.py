@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     
     # Ollama
     OLLAMA_HOST: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "deepseek-coder:6.7b-instruct"
+    OLLAMA_MODEL: str = "deepseek-r1:latest"  # Best reasoning model (strong instruction following)
     OLLAMA_TIMEOUT: int = 120
     
     # Gemini
