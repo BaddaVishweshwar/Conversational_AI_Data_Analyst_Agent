@@ -29,8 +29,9 @@ interface MainLayoutProps {
     children?: React.ReactNode;
 }
 
+
 const navItems: NavItem[] = [
-    { name: 'Chat', icon: MessageSquare, path: '/analytics' },
+    { name: 'Chat', icon: MessageSquare, path: '/chat' },
     { name: 'Datasets', icon: FolderOpen, path: '/datasets' },
     { name: 'Dashboards', icon: LayoutDashboard, path: '/dashboard' },
     { name: 'History', icon: History, path: '/history' },
@@ -143,8 +144,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                                 key={item.path}
                                 to={item.path}
                                 className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${isActive
-                                        ? 'bg-accent/10 text-accent border-l-2 border-accent shadow-[0_0_10px_rgba(0,191,165,0.3)]'
-                                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                                    ? 'bg-accent/10 text-accent border-l-2 border-accent shadow-[0_0_10px_rgba(0,191,165,0.3)]'
+                                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                                     }`}
                             >
                                 <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-accent' : ''}`} />
@@ -326,7 +327,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                                                         onClick={() => {
                                                             setSelectedDataset(dataset.id);
                                                             setShowDatasetsModal(false);
-                                                            navigate('/analytics');
+                                                            navigate('/chat');
                                                         }}
                                                     >
                                                         Analyze

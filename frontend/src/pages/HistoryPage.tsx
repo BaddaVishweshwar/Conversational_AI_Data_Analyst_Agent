@@ -52,7 +52,7 @@ export default function HistoryPage() {
     };
 
     const handleContinue = (datasetId: number, sessionId: string) => {
-        navigate('/analytics', { state: { datasetId, sessionId } });
+        navigate('/chat', { state: { datasetId, sessionId } });
     };
 
     const handleDelete = async (e: React.MouseEvent, sessionId: string) => {

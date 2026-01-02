@@ -152,7 +152,7 @@ export default function ConversationalAnalyticsPage() {
                     <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => navigate('/analytics')}
+                        onClick={() => navigate('/chat')}
                         className="text-muted-foreground hover:text-foreground"
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" />

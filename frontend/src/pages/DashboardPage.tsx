@@ -73,7 +73,7 @@ export default function DashboardPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Link to="/analytics">
+                    <Link to="/chat">
                         <Button className="bg-slate-900 hover:bg-black text-white rounded-lg px-6 gap-2 h-10 shadow-sm transition-all active:scale-95">
                             <Plus className="w-4 h-4" /> New Analysis
                         </Button>
@@ -212,7 +212,7 @@ export default function DashboardPage() {
                                     <p className="text-muted-foreground text-sm max-w-xs mx-auto mb-6">
                                         Analyze your datasets and pin key insights here for quick access.
                                     </p>
-                                    <Link to="/analytics">
+                                    <Link to="/chat">
                                         <Button variant="outline" size="sm" className="border-border text-slate-700 hover:bg-muted">
                                             Start Analyzing
                                         </Button>
@@ -248,7 +248,7 @@ export default function DashboardPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <Link to="/analytics" state={{ datasetId: dataset.id }}>
+                                        <Link to="/chat" state={{ datasetId: dataset.id }}>
                                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full text-slate-400 hover:text-foreground">
                                                 <ExternalLink className="w-4 h-4" />
                                             </Button>
@@ -277,7 +277,7 @@ export default function DashboardPage() {
                                     Import Dataset
                                 </Button>
                             </Link>
-                            <Link to="/analytics">
+                            <Link to="/chat">
                                 <Button className="w-full justify-start gap-3 bg-card/10 hover:bg-card/20 text-white border-none text-sm h-11 transition-all">
                                     <Search className="w-4 h-4" />
                                     Explore Data

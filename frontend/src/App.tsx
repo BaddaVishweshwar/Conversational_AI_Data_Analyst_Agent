@@ -45,7 +45,7 @@ function App() {
 
                         {/* Protected Routes (Wrapped in MainLayout and ProtectedRoute) */}
                         <Route path="/dashboard" element={<ProtectedRoute><MainLayout><DashboardPage /></MainLayout></ProtectedRoute>} />
-                        <Route path="/analytics" element={<ProtectedRoute><MainLayout><AnalyticsPage /></MainLayout></ProtectedRoute>} />
+                        <Route path="/chat" element={<ProtectedRoute><MainLayout><AnalyticsPage /></MainLayout></ProtectedRoute>} />
                         <Route path="/datasets" element={<ProtectedRoute><MainLayout><DatasetPage /></MainLayout></ProtectedRoute>} />
                         <Route path="/connections" element={<ProtectedRoute><MainLayout><ConnectionsPage /></MainLayout></ProtectedRoute>} />
                         <Route path="/history" element={<ProtectedRoute><MainLayout><HistoryPage /></MainLayout></ProtectedRoute>} />

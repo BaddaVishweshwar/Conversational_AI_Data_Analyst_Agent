@@ -21,7 +21,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+    { name: 'Analytics', href: '/chat', icon: BarChart3 },
     { name: 'History', href: '/history', icon: HistoryIcon },
     { name: 'Datasets', href: '/datasets', icon: Database },
     { name: 'Connections', href: '/connections', icon: Network },

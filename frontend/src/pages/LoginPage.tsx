@@ -28,7 +28,7 @@ export default function LoginPage() {
             localStorage.setItem('refresh_token', response.data.refresh_token);
 
             // Navigate to analytics
-            navigate('/analytics');
+            navigate('/chat');
             window.location.reload(); // Force reload to update auth state
         } catch (err: any) {
             setError(err.response?.data?.detail || 'Invalid credentials');
