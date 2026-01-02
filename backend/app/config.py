@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     ALLOWED_EXTENSIONS: set = {".csv", ".xlsx", ".xls", ".sas7bdat", ".parquet"}
     
     # CORS
-    CORS_ORIGINS: list = ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"]
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"]
     
     class Config:
         env_file = ".env"
