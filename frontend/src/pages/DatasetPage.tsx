@@ -77,13 +77,9 @@ export default function DatasetPage() {
                 ) : filteredDatasets.length === 0 ? (
                     <div className="text-center py-20">
                         <Database className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-                        <p className="text-muted-foreground mb-6">
+                        <p className="text-muted-foreground">
                             {searchQuery ? 'No datasets found matching your search' : 'No datasets uploaded yet'}
                         </p>
-                        <Button className="bg-accent hover:bg-accent/90">
-                            <Upload className="w-4 h-4 mr-2" />
-                            Upload Your First Dataset
-                        </Button>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
@@ -168,13 +164,16 @@ export default function DatasetPage() {
                                 input.onchange = async (e: any) => {
                                     const file = e.target.files[0];
                                     if (file) {
-                                        const formData = new FormData();
-                                        formData.append('file', file);
                                         try {
-                                            await datasetsAPI.upload(formData);
+                                            setLoading(true);
+                                            await datasetsAPI.upload(file);
                                             await loadDatasets();
-                                        } catch (error) {
+                                            alert('Dataset uploaded successfully!');
+                                        } catch (error: any) {
                                             console.error('Upload error:', error);
+                                            alert(error.response?.data?.detail || 'Failed to upload dataset');
+                                        } finally {
+                                            setLoading(false);
                                         }
                                     }
                                 };
