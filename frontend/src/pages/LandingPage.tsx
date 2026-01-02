@@ -11,11 +11,21 @@ export default function LandingPage() {
     const navigate = useNavigate();
     const heroRef = useRef<HTMLDivElement>(null);
     const [scrollY, setScrollY] = useState(0);
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
         const handleScroll = () => setScrollY(window.scrollY);
+        const handleMouseMove = (e: MouseEvent) => {
+            setMousePosition({ x: e.clientX, y: e.clientY });
+        };
+
         window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        window.addEventListener('mousemove', handleMouseMove);
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('mousemove', handleMouseMove);
+        };
     }, []);
 
     const features = [
@@ -94,59 +104,148 @@ export default function LandingPage() {
 
             {/* Hero Section */}
             <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-                {/* Animated Background Grid */}
-                <div className="absolute inset-0 opacity-20">
+                {/* Animated Background Grid with Parallax */}
+                <motion.div
+                    className="absolute inset-0 opacity-20"
+                    style={{
+                        y: scrollY * 0.5
+                    }}
+                >
                     <div className="absolute inset-0" style={{
                         backgroundImage: `linear-gradient(to right, #00bfa5 1px, transparent 1px),
                                         linear-gradient(to bottom, #00bfa5 1px, transparent 1px)`,
-                        backgroundSize: '80px 80px',
-                        transform: `translateY(${scrollY * 0.5}px)`
+                        backgroundSize: '80px 80px'
                     }} />
-                </div>
+                </motion.div>
 
-                {/* Glowing Orbs */}
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse" />
-                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-[120px] animate-pulse delay-700" />
+                {/* Floating Particles */}
+                {[...Array(20)].map((_, i) => (
+                    <motion.div
+                        key={i}
+                        className="absolute w-1 h-1 bg-accent rounded-full"
+                        initial={{
+                            x: Math.random() * window.innerWidth,
+                            y: Math.random() * window.innerHeight,
+                        }}
+                        animate={{
+                            y: [null, Math.random() * window.innerHeight],
+                            opacity: [0.2, 0.8, 0.2],
+                        }}
+                        transition={{
+                            duration: 10 + Math.random() * 20,
+                            repeat: Infinity,
+                            ease: "linear",
+                            delay: Math.random() * 5,
+                        }}
+                    />
+                ))}
+
+                {/* Glowing Orbs with Mouse Tracking */}
+                <motion.div
+                    className="absolute w-96 h-96 bg-accent/20 rounded-full blur-[120px]"
+                    animate={{
+                        x: mousePosition.x * 0.02,
+                        y: mousePosition.y * 0.02,
+                    }}
+                    transition={{ type: "spring", damping: 50, stiffness: 100 }}
+                    style={{
+                        top: '25%',
+                        left: '25%',
+                    }}
+                />
+                <motion.div
+                    className="absolute w-96 h-96 bg-emerald-500/20 rounded-full blur-[120px]"
+                    animate={{
+                        x: -mousePosition.x * 0.02,
+                        y: -mousePosition.y * 0.02,
+                        scale: [1, 1.2, 1],
+                    }}
+                    transition={{
+                        x: { type: "spring", damping: 50, stiffness: 100 },
+                        y: { type: "spring", damping: 50, stiffness: 100 },
+                        scale: { duration: 4, repeat: Infinity }
+                    }}
+                    style={{
+                        bottom: '25%',
+                        right: '25%',
+                    }}
+                />
 
                 <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
+                    {/* Floating Badge */}
                     <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8 }}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{
+                            scale: 1,
+                            opacity: 1,
+                            y: [0, -10, 0],
+                        }}
+                        transition={{
+                            scale: { delay: 0.2, duration: 0.5 },
+                            opacity: { delay: 0.2, duration: 0.5 },
+                            y: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 mb-8 backdrop-blur-sm"
                     >
-                        <motion.div
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.2, duration: 0.5 }}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 mb-8"
-                        >
-                            <Zap className="w-4 h-4 text-accent" />
-                            <span className="text-sm text-accent">Powered by Advanced AI</span>
-                        </motion.div>
+                        <Zap className="w-4 h-4 text-accent" />
+                        <span className="text-sm text-accent">Powered by Advanced AI</span>
+                    </motion.div>
 
-                        <h1 className="text-6xl md:text-8xl font-bold mb-6 leading-tight">
+                    {/* Animated Title - Word by Word */}
+                    <div className="text-6xl md:text-8xl font-bold mb-6 leading-tight">
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3, duration: 0.8 }}
+                        >
                             <span className="block bg-gradient-to-r from-white via-accent to-emerald-400 bg-clip-text text-transparent">
                                 Data Analysis
                             </span>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.5, duration: 0.8 }}
+                        >
                             <span className="block bg-gradient-to-r from-emerald-400 via-accent to-white bg-clip-text text-transparent">
                                 Made Simple
                             </span>
-                        </h1>
+                        </motion.div>
+                    </div>
 
-                        <p className="text-xl md:text-2xl text-gray-400 mb-12 max-w-3xl mx-auto">
-                            Ask questions in plain English. Get powerful insights instantly.
-                            <span className="text-accent"> No SQL required.</span>
-                        </p>
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.7, duration: 0.8 }}
+                        className="text-xl md:text-2xl text-gray-400 mb-12 max-w-3xl mx-auto"
+                    >
+                        Ask questions in plain English. Get powerful insights instantly.
+                        <span className="text-accent"> No SQL required.</span>
+                    </motion.p>
 
-                        <div className="flex items-center justify-center gap-4">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.9, duration: 0.8 }}
+                        className="flex items-center justify-center gap-4"
+                    >
+                        <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
                             <Button
                                 onClick={() => navigate('/register')}
                                 size="lg"
-                                className="bg-gradient-to-r from-accent to-emerald-500 hover:from-accent/90 hover:to-emerald-500/90 text-black font-semibold text-lg px-8 py-6 shadow-[0_0_30px_rgba(0,191,165,0.3)] hover:shadow-[0_0_50px_rgba(0,191,165,0.5)] transition-all"
+                                className="relative bg-gradient-to-r from-accent to-emerald-500 hover:from-accent/90 hover:to-emerald-500/90 text-black font-semibold text-lg px-8 py-6 shadow-[0_0_30px_rgba(0,191,165,0.3)] hover:shadow-[0_0_50px_rgba(0,191,165,0.5)] transition-all"
                             >
                                 Start Analyzing Free
                                 <ArrowRight className="w-5 h-5 ml-2" />
                             </Button>
+                        </motion.div>
+                        <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
                             <Button
                                 onClick={() => navigate('/login')}
                                 size="lg"
@@ -155,10 +254,10 @@ export default function LandingPage() {
                             >
                                 Watch Demo
                             </Button>
-                        </div>
+                        </motion.div>
                     </motion.div>
 
-                    {/* Scroll Indicator */}
+                    {/* Scroll Indicator with Continuous Animation */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -166,17 +265,26 @@ export default function LandingPage() {
                         className="absolute bottom-10 left-1/2 -translate-x-1/2"
                     >
                         <motion.div
-                            animate={{ y: [0, 10, 0] }}
-                            transition={{ repeat: Infinity, duration: 2 }}
+                            animate={{
+                                y: [0, 15, 0],
+                                opacity: [0.5, 1, 0.5]
+                            }}
+                            transition={{
+                                repeat: Infinity,
+                                duration: 2,
+                                ease: "easeInOut"
+                            }}
+                            className="flex flex-col items-center gap-2"
                         >
-                            <ChevronDown className="w-8 h-8 text-accent" />
+                            <span className="text-xs text-accent">Scroll</span>
+                            <ChevronDown className="w-6 h-6 text-accent" />
                         </motion.div>
                     </motion.div>
                 </div>
-            </section>
+            </section >
 
             {/* Features Grid */}
-            <section className="py-32 relative">
+            < section className="py-32 relative" >
                 <div className="max-w-7xl mx-auto px-6">
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
@@ -226,10 +334,10 @@ export default function LandingPage() {
                         ))}
                     </div>
                 </div>
-            </section>
+            </section >
 
             {/* CTA Section */}
-            <section className="py-32 relative overflow-hidden">
+            < section className="py-32 relative overflow-hidden" >
                 <div className="absolute inset-0 bg-gradient-to-b from-accent/10 to-transparent" />
                 <div className="absolute inset-0">
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-accent/20 rounded-full blur-[200px]" />
@@ -264,10 +372,10 @@ export default function LandingPage() {
                         No credit card required • Free forever plan available
                     </p>
                 </motion.div>
-            </section>
+            </section >
 
             {/* Footer */}
-            <footer className="border-t border-white/10 py-12">
+            < footer className="border-t border-white/10 py-12" >
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -279,7 +387,7 @@ export default function LandingPage() {
                         </p>
                     </div>
                 </div>
-            </footer>
-        </div>
+            </footer >
+        </div >
     );
 }
