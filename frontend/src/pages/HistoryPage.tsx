@@ -1,49 +1,75 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import {
-    History as HistoryIcon,
-    Search,
-    MessageSquare,
-    Database,
-    Calendar,
-    ArrowRight,
-    Loader2,
-    Trash2
+    Search, Plus, Filter, BarChart3, TrendingUp, AlertCircle,
+    Database, Calendar, RefreshCw, X, Upload, ChevronRight,
+    LineChart, PieChart
 } from 'lucide-react';
-import { queriesAPI, datasetsAPI } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { formatDistanceToNow } from 'date-fns';
-import { motion } from 'framer-motion';
+
+interface AnalysisHistory {
+    id: string;
+    dataset: string;
+    insightType: string;
+    question: string;
+    visualizationType: string;
+    sqlGenerated: string;
+    date: string;
+    status: string;
+}
 
 export default function HistoryPage() {
     const navigate = useNavigate();
-    const [history, setHistory] = useState<any[]>([]);
-    const [datasets, setDatasets] = useState<Record<number, string>>({});
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedDataset, setSelectedDataset] = useState('all');
+    const [selectedDate, setSelectedDate] = useState('all');
+    const [showFilters, setShowFilters] = useState(false);
+    const [history, setHistory] = useState<AnalysisHistory[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        loadData();
+        loadHistory();
     }, []);
 
-    const loadData = async () => {
+    const loadHistory = async () => {
         try {
             setLoading(true);
-            const [sessionsRes, datasetsRes] = await Promise.all([
-                // Fetch unique sessions instead of raw queries
-                queriesAPI.getSessions(),
-                datasetsAPI.list()
-            ]);
-
-            // Create a map of dataset IDs to names for quick lookup
-            const datasetMap: Record<number, string> = {};
-            datasetsRes.data.forEach((d: any) => {
-                datasetMap[d.id] = d.name;
-            });
-            setDatasets(datasetMap);
-            setHistory(sessionsRes.data);
+            // TODO: Replace with actual API call
+            // Simulated data for now
+            const mockHistory: AnalysisHistory[] = [
+                {
+                    id: '1',
+                    dataset: 'Sales_Q4_india.csv',
+                    insightType: 'Top Analysis',
+                    question: 'Which region drove the highest revenue growth',
+                    visualizationType: 'Line & Bar',
+                    sqlGenerated: '95%',
+                    date: '2 days ago',
+                    status: 'Last opened up!'
+                },
+                {
+                    id: '2',
+                    dataset: 'Retail_Forecast.csv',
+                    insightType: 'Forecast',
+                    question: 'Predict sales for the next 6 months',
+                    visualizationType: 'Forecast Line',
+                    sqlGenerated: '92%',
+                    date: '1 week ago',
+                    status: "You're all caught up!"
+                },
+                {
+                    id: '3',
+                    dataset: 'Products_2023.csv',
+                    insightType: 'Top Sellers',
+                    question: 'Show me the top-selling products in Q4',
+                    visualizationType: 'Bar',
+                    sqlGenerated: '98%',
+                    date: 'Apr 3, 2024',
+                    status: "You're all caught up!"
+                }
+            ];
+            setHistory(mockHistory);
         } catch (error) {
             console.error('Error loading history:', error);
         } finally {
@@ -51,134 +77,240 @@ export default function HistoryPage() {
         }
     };
 
-    const handleContinue = (datasetId: number, sessionId: string) => {
-        navigate('/chat', { state: { datasetId, sessionId } });
-    };
+    const filteredHistory = history.filter(item => {
+        const matchesSearch = item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.dataset.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesDataset = selectedDataset === 'all' || item.dataset === selectedDataset;
+        return matchesSearch && matchesDataset;
+    });
 
-    const handleDelete = async (e: React.MouseEvent, sessionId: string) => {
-        e.stopPropagation();
-        console.log("Attempting to delete session:", sessionId);
-
-        if (!confirm('Are you sure you want to delete this chat session?')) return;
-
-        try {
-            console.log("Sending delete request...");
-            await queriesAPI.deleteSession(sessionId);
-            console.log("Delete request successful. Updating state.");
-            setHistory(prev => prev.filter(item => item.session_id !== sessionId));
-            // Force refresh to be sure
-            // loadData(); 
-        } catch (error: any) {
-            console.error('Error deleting session:', error);
-            alert(`Failed to delete session: ${error.response?.data?.detail || error.message}`);
+    const getVisualizationIcon = (type: string) => {
+        switch (type.toLowerCase()) {
+            case 'line & bar':
+            case 'line':
+                return <LineChart className="w-3 h-3" />;
+            case 'bar':
+                return <BarChart3 className="w-3 h-3" />;
+            case 'pie':
+                return <PieChart className="w-3 h-3" />;
+            default:
+                return <BarChart3 className="w-3 h-3" />;
         }
     };
 
-    const filteredHistory = history.filter(item =>
-        item.first_query.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.dataset_id && datasets[item.dataset_id]?.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const getInsightIcon = (type: string) => {
+        switch (type.toLowerCase()) {
+            case 'forecast':
+                return <TrendingUp className="w-4 h-4" />;
+            case 'anomaly detection':
+                return <AlertCircle className="w-4 h-4" />;
+            default:
+                return <BarChart3 className="w-4 h-4" />;
+        }
+    };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                        Chat History
-                    </h1>
-                    <p className="text-muted-foreground mt-1">Resume your past analysis sessions.</p>
-                </div>
-                <div className="relative w-full md:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <Input
-                        placeholder="Search sessions..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 bg-card"
-                    />
-                </div>
-            </div>
+        <div className="h-full overflow-y-auto bg-background">
+            <div className="max-w-7xl mx-auto px-6 py-8">
+                {/* Header */}
+                <div className="flex items-start justify-between mb-8">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                                <BarChart3 className="w-5 h-5 text-accent" />
+                            </div>
+                            <h1 className="text-3xl font-semibold text-foreground">
+                                Analysis History
+                            </h1>
+                        </div>
+                        <p className="text-muted-foreground text-sm ml-13">
+                            Your past data explorations, insights, and decisions — organized.
+                        </p>
+                    </div>
 
-            {/* History List */}
-            <Card className="bg-card border-border shadow-sm">
-                <CardHeader className="border-b border-slate-50 bg-muted/30">
-                    <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2 text-muted-foreground">
-                        <HistoryIcon className="w-4 h-4" /> Past Sessions
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                    {loading ? (
-                        <div className="flex items-center justify-center p-12 text-slate-400">
-                            <Loader2 className="w-8 h-8 animate-spin" />
+                    <div className="flex items-center gap-3">
+                        {/* Search */}
+                        <div className="relative w-80">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                                type="text"
+                                placeholder="Search dataset, metric, or question..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-10 bg-muted/50 border-border"
+                            />
                         </div>
-                    ) : filteredHistory.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center p-12 text-slate-400">
-                            <HistoryIcon className="w-12 h-12 mb-4 opacity-20" />
-                            <p>No history found</p>
+
+                        {/* New Analysis Button */}
+                        <Button
+                            className="bg-accent hover:bg-accent/90 gap-2"
+                            onClick={() => navigate('/chat')}
+                        >
+                            <Plus className="w-4 h-4" />
+                            New Analysis
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Filters Bar */}
+                <div className="flex items-center gap-3 mb-6">
+                    {/* Dataset Filter */}
+                    <select
+                        value={selectedDataset}
+                        onChange={(e) => setSelectedDataset(e.target.value)}
+                        className="px-4 py-2 bg-muted/50 border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+                    >
+                        <option value="all">All Datasets</option>
+                        <option value="Sales_Q4_india.csv">Sales_Q4_india.csv</option>
+                        <option value="Retail_Forecast.csv">Retail_Forecast.csv</option>
+                        <option value="Products_2023.csv">Products_2023.csv</option>
+                    </select>
+
+                    {/* Date Filter */}
+                    <select
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        className="px-4 py-2 bg-muted/50 border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+                    >
+                        <option value="all">All Dates</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                    </select>
+
+                    {/* Filter Toggle */}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="gap-2"
+                    >
+                        <Filter className="w-4 h-4" />
+                        Filter
+                    </Button>
+
+                    <div className="flex-1" />
+
+                    {/* Action Buttons */}
+                    <Button variant="ghost" size="sm" onClick={loadHistory}>
+                        <RefreshCw className="w-4 h-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                            setSearchQuery('');
+                            setSelectedDataset('all');
+                            setSelectedDate('all');
+                        }}
+                    >
+                        <X className="w-4 h-4" />
+                    </Button>
+                </div>
+
+                {/* History Grid */}
+                {loading ? (
+                    <div className="flex items-center justify-center py-20">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+                    </div>
+                ) : filteredHistory.length === 0 ? (
+                    /* Empty State */
+                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                        <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center mb-6">
+                            <BarChart3 className="w-10 h-10 text-accent" />
                         </div>
-                    ) : (
-                        <div className="divide-y divide-slate-100">
-                            {filteredHistory.map((item, idx) => (
-                                <motion.div
-                                    key={item.session_id || idx}
-                                    initial={{ opacity: 0, y: 5 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: idx * 0.05 }}
-                                    className="p-4 hover:bg-muted transition-colors group flex items-start justify-between gap-4 cursor-pointer"
-                                    onClick={() => item.dataset_id && handleContinue(item.dataset_id, item.session_id)}
+                        <h2 className="text-2xl font-semibold text-foreground mb-3">
+                            No Analysis Yet
+                        </h2>
+                        <p className="text-muted-foreground mb-2 max-w-md">
+                            Start by uploading a dataset and asking questions like:
+                        </p>
+                        <ul className="text-muted-foreground text-sm mb-6 space-y-1">
+                            <li>"What are the top revenue drivers?"</li>
+                            <li>"Show sales trends by region"</li>
+                            <li>"Detect anomalies in this dataset?"</li>
+                        </ul>
+                        <Button
+                            className="bg-accent hover:bg-accent/90 gap-2"
+                            onClick={() => navigate('/datasets')}
+                        >
+                            <Upload className="w-4 h-4" />
+                            Upload Dataset
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredHistory.map((item) => (
+                            <div
+                                key={item.id}
+                                className="group relative border border-border rounded-xl p-5 hover:bg-muted/30 transition-all bg-card cursor-pointer"
+                                onClick={() => navigate(`/chat?session=${item.id}`)}
+                            >
+                                {/* Header */}
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <Database className="w-3 h-3" />
+                                        <span className="font-medium">Dataset:</span>
+                                        <span className="text-foreground truncate max-w-[180px]">
+                                            {item.dataset}
+                                        </span>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+
+                                {/* Insight Type */}
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                        {getInsightIcon(item.insightType)}
+                                        <span>Insight Type:</span>
+                                        <span className="text-foreground font-medium">{item.insightType}</span>
+                                    </div>
+                                </div>
+
+                                {/* Question */}
+                                <p className="text-sm text-foreground mb-4 line-clamp-2">
+                                    {item.question}
+                                </p>
+
+                                {/* Metadata Row */}
+                                <div className="flex items-center justify-between">
+                                    {/* Visualization Type */}
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1 px-2 py-1 bg-muted/50 rounded text-xs">
+                                            {getVisualizationIcon(item.visualizationType)}
+                                            <span className="text-muted-foreground">{item.visualizationType}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 px-2 py-1 bg-accent/10 rounded text-xs">
+                                            <span className="text-accent">SQL Generated</span>
+                                            <span className="text-accent font-semibold">{item.sqlGenerated}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Resume Analysis Button */}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full mt-4 border-accent/20 text-accent hover:bg-accent/10 gap-2"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/chat?session=${item.id}`);
+                                    }}
                                 >
-                                    <div className="flex gap-4">
-                                        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
-                                            <MessageSquare className="w-5 h-5 text-indigo-500" />
-                                        </div>
-                                        <div>
-                                            <p className="font-medium text-foreground line-clamp-1">{item.first_query}</p>
-                                            <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                                                {item.dataset_id && (
-                                                    <span className="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-full">
-                                                        <Database className="w-3 h-3" />
-                                                        {datasets[item.dataset_id] || `Dataset #${item.dataset_id}`}
-                                                    </span>
-                                                )}
-                                                <span className="flex items-center gap-1">
-                                                    <Calendar className="w-3 h-3" />
-                                                    {(() => {
-                                                        // Fix UTC parsing by ensuring 'Z' is present if missing
-                                                        let dateStr = item.created_at;
-                                                        if (dateStr && !dateStr.endsWith('Z')) {
-                                                            dateStr += 'Z';
-                                                        }
-                                                        return dateStr ? formatDistanceToNow(new Date(dateStr), { addSuffix: true }) : 'Recently';
-                                                    })()}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    Resume Analysis
+                                    <ChevronRight className="w-3 h-3" />
+                                </Button>
 
-                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                            onClick={(e) => handleDelete(e, item.session_id)}
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                                        >
-                                            Resume <ArrowRight className="w-4 h-4 ml-1" />
-                                        </Button>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+                                {/* Footer */}
+                                <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+                                    <span className="text-xs text-muted-foreground">{item.date}</span>
+                                    <span className="text-xs text-muted-foreground italic">{item.status}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
