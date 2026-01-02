@@ -1,3 +1,4 @@
+```javascript
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -5,6 +6,7 @@ import {
     BarChart3, Database, MessageSquare, ChevronDown
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { AnimatedBackground } from '../components/ui/animated-background';
 import { useEffect, useRef, useState } from 'react';
 
 export default function LandingPage() {
@@ -104,72 +106,8 @@ export default function LandingPage() {
 
             {/* Hero Section */}
             <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-                {/* Animated Background Grid with Parallax */}
-                <motion.div
-                    className="absolute inset-0 opacity-20"
-                    style={{
-                        y: scrollY * 0.5
-                    }}
-                >
-                    <div className="absolute inset-0" style={{
-                        backgroundImage: `linear-gradient(to right, #00bfa5 1px, transparent 1px),
-                                        linear-gradient(to bottom, #00bfa5 1px, transparent 1px)`,
-                        backgroundSize: '80px 80px'
-                    }} />
-                </motion.div>
-
-                {/* Floating Particles */}
-                {[...Array(20)].map((_, i) => (
-                    <motion.div
-                        key={i}
-                        className="absolute w-1 h-1 bg-accent rounded-full"
-                        initial={{
-                            x: Math.random() * window.innerWidth,
-                            y: Math.random() * window.innerHeight,
-                        }}
-                        animate={{
-                            y: [null, Math.random() * window.innerHeight],
-                            opacity: [0.2, 0.8, 0.2],
-                        }}
-                        transition={{
-                            duration: 10 + Math.random() * 20,
-                            repeat: Infinity,
-                            ease: "linear",
-                            delay: Math.random() * 5,
-                        }}
-                    />
-                ))}
-
-                {/* Glowing Orbs with Mouse Tracking */}
-                <motion.div
-                    className="absolute w-96 h-96 bg-accent/20 rounded-full blur-[120px]"
-                    animate={{
-                        x: mousePosition.x * 0.02,
-                        y: mousePosition.y * 0.02,
-                    }}
-                    transition={{ type: "spring", damping: 50, stiffness: 100 }}
-                    style={{
-                        top: '25%',
-                        left: '25%',
-                    }}
-                />
-                <motion.div
-                    className="absolute w-96 h-96 bg-emerald-500/20 rounded-full blur-[120px]"
-                    animate={{
-                        x: -mousePosition.x * 0.02,
-                        y: -mousePosition.y * 0.02,
-                        scale: [1, 1.2, 1],
-                    }}
-                    transition={{
-                        x: { type: "spring", damping: 50, stiffness: 100 },
-                        y: { type: "spring", damping: 50, stiffness: 100 },
-                        scale: { duration: 4, repeat: Infinity }
-                    }}
-                    style={{
-                        bottom: '25%',
-                        right: '25%',
-                    }}
-                />
+                {/* Animated Background Component */}
+                <AnimatedBackground variant="accent" />
 
                 <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
                     {/* Floating Badge */}
@@ -315,10 +253,10 @@ export default function LandingPage() {
                                 className="group relative p-8 rounded-2xl bg-gradient-to-br from-white/5 to-white/0 border border-white/10 hover:border-accent/30 transition-all duration-300 overflow-hidden"
                             >
                                 {/* Hover Gradient */}
-                                <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
+                                <div className={`absolute inset - 0 bg - gradient - to - br ${ feature.color } opacity - 0 group - hover: opacity - 10 transition - opacity duration - 300`} />
 
                                 <div className="relative">
-                                    <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                                    <div className={`w - 14 h - 14 rounded - xl bg - gradient - to - br ${ feature.color } flex items - center justify - center mb - 6 group - hover: scale - 110 transition - transform duration - 300`}>
                                         <feature.icon className="w-7 h-7 text-black" />
                                     </div>
 
