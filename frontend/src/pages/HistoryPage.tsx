@@ -77,6 +77,25 @@ export default function HistoryPage() {
         }
     };
 
+    const handleDelete = async (itemId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+
+        if (!confirm('Are you sure you want to delete this analysis? This cannot be undone.')) {
+            return;
+        }
+
+        try {
+            // TODO: Replace with actual API call to delete
+            // await api.delete(`/conversations/${itemId}`);
+
+            // Remove from local state
+            setHistory(prev => prev.filter(item => item.id !== itemId));
+        } catch (error) {
+            console.error('Error deleting history:', error);
+            alert('Failed to delete analysis. Please try again.');
+        }
+    };
+
     const filteredHistory = history.filter(item => {
         const matchesSearch = item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
             item.dataset.toLowerCase().includes(searchQuery.toLowerCase());
@@ -255,7 +274,16 @@ export default function HistoryPage() {
                                             {item.dataset}
                                         </span>
                                     </div>
-                                    <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            onClick={(e) => handleDelete(item.id, e)}
+                                            className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+                                            title="Delete this analysis"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                        <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </div>
                                 </div>
 
                                 {/* Insight Type */}
