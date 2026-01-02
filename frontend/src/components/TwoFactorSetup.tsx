@@ -106,14 +106,14 @@ export default function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
                     </div>
 
                     {/* QR Code */}
-                    <div className="bg-white p-6 rounded-xl border-2 border-slate-200">
+                    <div className="bg-card p-6 rounded-xl border-2 border-border">
                         <img src={qrCode} alt="QR Code" className="w-full" />
                     </div>
 
                     {/* Manual Entry */}
-                    <div className="bg-slate-50 p-4 rounded-lg">
+                    <div className="bg-muted p-4 rounded-lg">
                         <p className="text-sm text-slate-600 mb-2">Or enter manually:</p>
-                        <code className="text-sm font-mono bg-white px-3 py-2 rounded border border-slate-200 block">
+                        <code className="text-sm font-mono bg-card px-3 py-2 rounded border border-border block">
                             {secret}
                         </code>
                     </div>

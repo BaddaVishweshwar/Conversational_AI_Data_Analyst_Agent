@@ -498,10 +498,10 @@ export default function AnalyticsPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">
                         Agent Analysis
                     </h1>
-                    <p className="text-slate-500 mt-1">Chat with your datasets to extract insights and generate reports.</p>
+                    <p className="text-muted-foreground mt-1">Chat with your datasets to extract insights and generate reports.</p>
                 </div>
             </div>
 
@@ -511,19 +511,19 @@ export default function AnalyticsPage() {
                 <div className="lg:col-span-1 flex flex-col gap-6 overflow-hidden h-full pr-1">
 
                     {/* Dataset Selector */}
-                    <Card className="bg-white border-slate-200 shadow-sm overflow-hidden shrink-0">
-                        <CardHeader className="p-4 border-b border-slate-50 bg-slate-50/30">
-                            <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 text-slate-500">
+                    <Card className="bg-card border-border shadow-sm overflow-hidden shrink-0">
+                        <CardHeader className="p-4 border-b border-border bg-muted/30">
+                            <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 text-muted-foreground">
                                 <Database className="w-4 h-4" /> Environment
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 space-y-4">
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                 <select
                                     value={selectedDataset || ''}
                                     onChange={(e) => setSelectedDataset(Number(e.target.value))}
-                                    className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all appearance-none cursor-pointer text-slate-700"
+                                    className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-lg text-sm focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all appearance-none cursor-pointer text-foreground"
                                 >
                                     <option value="">Choose a dataset...</option>
                                     {datasets.map((dataset) => (
@@ -538,20 +538,20 @@ export default function AnalyticsPage() {
                                 <motion.div
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-2"
+                                    className="p-3 rounded-lg bg-muted border border-border space-y-2"
                                 >
                                     <div className="flex justify-between text-[10px]">
-                                        <span className="text-slate-500 font-medium">ROWS</span>
-                                        <span className="font-bold text-slate-900">{selectedDatasetInfo.row_count?.toLocaleString()}</span>
+                                        <span className="text-muted-foreground font-medium">ROWS</span>
+                                        <span className="font-bold text-foreground">{selectedDatasetInfo.row_count?.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between text-[10px]">
-                                        <span className="text-slate-500 font-medium">COLS</span>
-                                        <span className="font-bold text-slate-900">{selectedDatasetInfo.column_count}</span>
+                                        <span className="text-muted-foreground font-medium">COLS</span>
+                                        <span className="font-bold text-foreground">{selectedDatasetInfo.column_count}</span>
                                     </div>
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        className="w-full h-8 text-xs font-medium border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-sm mt-1"
+                                        className="w-full h-8 text-xs font-medium border-border bg-card hover:bg-muted text-foreground shadow-sm mt-1"
                                         onClick={async () => {
                                             if (!selectedDataset) return;
                                             setLoading(true);
@@ -585,10 +585,10 @@ export default function AnalyticsPage() {
                     {/* Recent Activity Sidebar (ChatGPT Style) */}
                     {/* Recent Activity Sidebar */}
                     {selectedDataset && (
-                        <div className="flex-1 bg-slate-50 p-4 rounded-lg border border-slate-200 flex items-center justify-center text-center">
+                        <div className="flex-1 bg-muted p-4 rounded-lg border border-border flex items-center justify-center text-center">
                             <div>
-                                <HistoryIcon className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                                <p className="text-xs text-slate-400 max-w-[150px]">
+                                <HistoryIcon className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                                <p className="text-xs text-muted-foreground max-w-[150px]">
                                     View past sessions in the <span className="font-medium text-indigo-500 cursor-pointer" onClick={() => navigate('/history')}>History</span> page.
                                 </p>
                             </div>
@@ -598,13 +598,13 @@ export default function AnalyticsPage() {
                 </div>
                 {/* Main Interaction Area */}
                 <div className="lg:col-span-3 flex flex-col min-h-0">
-                    <Card className="flex-1 flex flex-col bg-white border-slate-200 shadow-xl overflow-hidden relative">
+                    <Card className="flex-1 flex flex-col bg-card border-border shadow-xl overflow-hidden relative">
 
                         {/* Status Bar */}
-                        <div className="px-6 py-3 border-b border-slate-50 bg-slate-50/20 flex items-center justify-between shrink-0">
+                        <div className="px-6 py-3 border-b border-border bg-muted/20 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-2">
-                                <div className={`w-1.5 h-1.5 rounded-full ${loading ? 'bg-slate-900 animate-pulse' : 'bg-slate-300'}`} />
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                <div className={`w-1.5 h-1.5 rounded-full ${loading ? 'bg-primary animate-pulse' : 'bg-slate-300'}`} />
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                                     {loading ? 'Agent is Processing' : 'Agent Idle'}
                                 </span>
                             </div>
@@ -613,18 +613,18 @@ export default function AnalyticsPage() {
                                     size="sm"
                                     variant="ghost"
                                     onClick={handleNewChat}
-                                    className="h-6 px-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                                    className="h-6 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-slate-100"
                                 >
                                     <Plus className="w-3 h-3 mr-1" /> New Chat
                                 </Button>
-                                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest border-l border-slate-200 pl-3">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest border-l border-border pl-3">
                                     Instance: Alpha
                                 </span>
                             </div>
                         </div>
 
                         {/* Messages Area */}
-                        <CardContent className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar relative bg-slate-50/20">
+                        <CardContent className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar relative bg-muted/20">
                             <AnimatePresence>
                                 {messages.length === 0 ? (
                                     <motion.div
@@ -633,11 +633,11 @@ export default function AnalyticsPage() {
                                         className="h-full flex flex-col items-center justify-center p-8"
                                     >
                                         <div className="text-center mb-10 max-w-md">
-                                            <div className="w-16 h-16 rounded-2xl bg-slate-900 flex items-center justify-center mb-6 shadow-lg mx-auto">
+                                            <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mb-6 shadow-lg mx-auto">
                                                 <Sparkles className="w-8 h-8 text-white" />
                                             </div>
-                                            <h3 className="text-xl font-bold mb-2 text-slate-900">Start a new analysis</h3>
-                                            <p className="text-slate-500 text-sm">
+                                            <h3 className="text-xl font-bold mb-2 text-foreground">Start a new analysis</h3>
+                                            <p className="text-muted-foreground text-sm">
                                                 Select a suggested query below or type your own question to explore your data.
                                             </p>
                                         </div>
@@ -663,14 +663,14 @@ export default function AnalyticsPage() {
                                                         // User asked "suggested message", usually implies clicking sends it.
                                                         // I'll create a new handler `handleSuggestion(q)` to send immediately.
                                                     }}
-                                                    className="flex items-center gap-4 p-4 text-left bg-white border border-slate-200 rounded-xl hover:border-slate-400 hover:shadow-md transition-all group"
+                                                    className="flex items-center gap-4 p-4 text-left bg-card border border-border rounded-xl hover:border-slate-400 hover:shadow-md transition-all group"
                                                 >
-                                                    <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center group-hover:bg-slate-100 transition-colors">
-                                                        <suggestion.icon className="w-5 h-5 text-slate-500 group-hover:text-slate-900" />
+                                                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-slate-100 transition-colors">
+                                                        <suggestion.icon className="w-5 h-5 text-muted-foreground group-hover:text-foreground" />
                                                     </div>
                                                     <div>
-                                                        <span className="block text-sm font-bold text-slate-700 group-hover:text-slate-900">{suggestion.text}</span>
-                                                        <span className="block text-[10px] text-slate-400">Click to ask</span>
+                                                        <span className="block text-sm font-bold text-foreground group-hover:text-foreground">{suggestion.text}</span>
+                                                        <span className="block text-[10px] text-muted-foreground">Click to ask</span>
                                                     </div>
                                                 </motion.button>
                                             ))}
@@ -687,7 +687,7 @@ export default function AnalyticsPage() {
                                         >
                                             {/* User Message */}
                                             {message.role === 'user' && (
-                                                <div className="bg-slate-900 px-5 py-2.5 rounded-2xl rounded-tr-none text-sm font-medium text-white shadow-md max-w-[85%]">
+                                                <div className="bg-primary px-5 py-2.5 rounded-2xl rounded-tr-none text-sm font-medium text-white shadow-md max-w-[85%]">
                                                     {message.content}
                                                 </div>
                                             )}
@@ -695,19 +695,19 @@ export default function AnalyticsPage() {
                                             {/* AI Message */}
                                             {message.role === 'assistant' && (
                                                 <div className="w-full space-y-4 max-w-[95%]">
-                                                    <div className="flex items-center gap-2 text-slate-400 mb-1 ml-1">
+                                                    <div className="flex items-center gap-2 text-muted-foreground mb-1 ml-1">
                                                         <Sparkles className="w-4 h-4" />
                                                         <span className="text-[10px] font-bold uppercase tracking-wider">Analysis Result</span>
                                                     </div>
 
-                                                    <div className="bg-white p-6 md:p-8 rounded-2xl rounded-tl-none border border-slate-200 shadow-md space-y-6">
+                                                    <div className="bg-card p-6 md:p-8 rounded-2xl rounded-tl-none border border-border shadow-md space-y-6">
 
                                                         {typeof message.content === 'object' && message.content !== null && message.content.insights && (
                                                             <div className="space-y-3">
-                                                                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                                                    <Sparkles className="w-3.5 h-3.5 text-slate-900" /> Executive Insights
+                                                                <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                                                                    <Sparkles className="w-3.5 h-3.5 text-foreground" /> Executive Insights
                                                                 </div>
-                                                                <div className="text-sm prose prose-slate max-w-none text-slate-600 leading-relaxed bg-slate-50 p-6 rounded-xl border border-slate-100">
+                                                                <div className="text-sm prose prose-slate max-w-none text-slate-600 leading-relaxed bg-muted p-6 rounded-xl border border-slate-100">
                                                                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                                         {message.content.insights}
                                                                     </ReactMarkdown>
@@ -718,27 +718,27 @@ export default function AnalyticsPage() {
                                                         {(typeof message.content === 'object' && message.content !== null && (message.content.visualization_config || message.content.python_chart)) && (
                                                             <div className="space-y-3">
                                                                 <div className="flex items-center justify-between">
-                                                                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                                    <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                                                                         {(!message.content.python_chart && message.content.visualization_config?.type === 'table') ? (
-                                                                            <><Database className="w-3.5 h-3.5 text-slate-900" /> Data Result</>
+                                                                            <><Database className="w-3.5 h-3.5 text-foreground" /> Data Result</>
                                                                         ) : (
-                                                                            <><PieChart className="w-3.5 h-3.5 text-slate-900" /> Visualization</>
+                                                                            <><PieChart className="w-3.5 h-3.5 text-foreground" /> Visualization</>
                                                                         )}
                                                                     </div>
-                                                                    <Button variant="ghost" size="sm" className="h-7 px-2.5 text-[10px] font-bold text-slate-500 hover:text-slate-900"
+                                                                    <Button variant="ghost" size="sm" className="h-7 px-2.5 text-[10px] font-bold text-muted-foreground hover:text-foreground"
                                                                         onClick={() => setTweakingChartId(tweakingChartId === idx ? null : idx)}
                                                                     >
                                                                         <Settings2 className="w-3 h-3 mr-1.5" /> Configure
                                                                     </Button>
                                                                 </div>
-                                                                <div className={`bg-slate-50/50 p-4 rounded-xl border border-slate-100 min-h-[300px] ${(!message.content.python_chart && message.content.visualization_config?.type === 'table') ? 'overflow-auto block' : 'flex items-center justify-center'}`}>
+                                                                <div className={`bg-muted/50 p-4 rounded-xl border border-slate-100 min-h-[300px] ${(!message.content.python_chart && message.content.visualization_config?.type === 'table') ? 'overflow-auto block' : 'flex items-center justify-center'}`}>
                                                                     {message.content.python_chart ? (
-                                                                        <img src={message.content.python_chart} className="w-full h-auto rounded-lg shadow-sm border border-slate-200" />
+                                                                        <img src={message.content.python_chart} className="w-full h-auto rounded-lg shadow-sm border border-border" />
                                                                     ) : (
                                                                         (message.content.visualization_config?.data && message.content.visualization_config.data.length > 0) ? (
                                                                             <ChartRenderer config={message.content.visualization_config} />
                                                                         ) : (
-                                                                            <div className="text-center text-slate-400 text-xs py-12">
+                                                                            <div className="text-center text-muted-foreground text-xs py-12">
                                                                                 <Database className="w-8 h-8 mx-auto mb-2 opacity-20" />
                                                                                 <p>No data rows returned from query.</p>
                                                                             </div>
@@ -747,11 +747,11 @@ export default function AnalyticsPage() {
                                                                 </div>
                                                                 <div className="mt-4">
                                                                     {typeof message.content === 'object' && message.content !== null && message.content.result_data && message.content.visualization_config && (
-                                                                        <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
-                                                                            <div className="p-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                                                                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Analysis Result</span>
+                                                                        <div className="border border-border rounded-lg overflow-hidden bg-card">
+                                                                            <div className="p-3 border-b border-slate-100 bg-muted flex justify-between items-center">
+                                                                                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Analysis Result</span>
                                                                                 {message.content.execution_time && (
-                                                                                    <span className="text-xs text-slate-400">
+                                                                                    <span className="text-xs text-muted-foreground">
                                                                                         {message.content.execution_time}ms
                                                                                     </span>
                                                                                 )}
@@ -789,7 +789,7 @@ export default function AnalyticsPage() {
                                                         {message.content.generated_sql && (
                                                             <div className="border-t border-slate-100 pt-4">
                                                                 <details className="group/code space-y-2" open={message.isRepairing}>
-                                                                    <summary className="flex items-center gap-2 text-[10px] font-bold text-slate-300 hover:text-slate-500 uppercase tracking-widest cursor-pointer select-none transition-colors justify-end">
+                                                                    <summary className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground hover:text-muted-foreground uppercase tracking-widest cursor-pointer select-none transition-colors justify-end">
                                                                         <Terminal className="w-3 h-3" />
                                                                         <span>Analysis Procedure</span>
                                                                         <ChevronRight className="w-3 h-3 group-open/code:rotate-90 transition-transform" />
@@ -808,18 +808,18 @@ export default function AnalyticsPage() {
                                                                                 <Button
                                                                                     variant="ghost"
                                                                                     size="sm"
-                                                                                    className="absolute top-2 right-2 text-xs text-slate-500 hover:text-slate-900"
+                                                                                    className="absolute top-2 right-2 text-xs text-muted-foreground hover:text-foreground"
                                                                                     onClick={() => setEditingMessageId(null)}
                                                                                 >
                                                                                     Cancel
                                                                                 </Button>
                                                                             </div>
                                                                         ) : (
-                                                                            <div className="bg-slate-50 rounded-lg p-4 font-mono text-xs overflow-x-auto relative group">
-                                                                                <pre className="text-slate-500">
+                                                                            <div className="bg-muted rounded-lg p-4 font-mono text-xs overflow-x-auto relative group">
+                                                                                <pre className="text-muted-foreground">
                                                                                     <code>{message.content.generated_sql}</code>
                                                                                 </pre>
-                                                                                <Button variant="ghost" size="sm" className="absolute top-2 right-2 h-6 px-2 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity bg-white/50 backdrop-blur-sm"
+                                                                                <Button variant="ghost" size="sm" className="absolute top-2 right-2 h-6 px-2 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity bg-card/50 backdrop-blur-sm"
                                                                                     onClick={() => {
                                                                                         setEditingMessageId(editingMessageId === idx ? null : idx);
                                                                                     }}
@@ -833,15 +833,15 @@ export default function AnalyticsPage() {
                                                             </div>
                                                         )}
 
-                                                        <div className="pt-4 border-t border-slate-100 flex items-center justify-between flex-wrap gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                                        <div className="pt-4 border-t border-slate-100 flex items-center justify-between flex-wrap gap-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                                                             <div className="flex gap-4">
                                                                 <span>Time: {message.content.execution_time}ms</span>
                                                                 <span>Engine: Standard-AI</span>
                                                             </div>
                                                             <div className="flex gap-3">
-                                                                <button className="hover:text-slate-900 flex items-center gap-1"><Download className="w-3 h-3" /> Export</button>
+                                                                <button className="hover:text-foreground flex items-center gap-1"><Download className="w-3 h-3" /> Export</button>
                                                                 <button
-                                                                    className={`hover:text-slate-900 flex items-center gap-1 ${pinningMessageId === idx ? 'text-emerald-600 font-bold' : ''}`}
+                                                                    className={`hover:text-foreground flex items-center gap-1 ${pinningMessageId === idx ? 'text-emerald-600 font-bold' : ''}`}
                                                                     onClick={() => handlePin(message, idx)}
                                                                     disabled={pinningMessageId === idx}
                                                                 >
@@ -890,7 +890,7 @@ export default function AnalyticsPage() {
                                 <motion.div
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
-                                    className="flex items-center gap-3 text-slate-900 p-4"
+                                    className="flex items-center gap-3 text-foreground p-4"
                                 >
                                     <div className="flex gap-1 items-center justify-center">
                                         {[0, 1, 2].map((i) => (
@@ -898,7 +898,7 @@ export default function AnalyticsPage() {
                                                 key={i}
                                                 animate={{ scale: [1, 1.2, 1], opacity: [0.4, 1, 0.4] }}
                                                 transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
-                                                className="w-1.5 h-1.5 rounded-full bg-slate-900"
+                                                className="w-1.5 h-1.5 rounded-full bg-primary"
                                             />
                                         ))}
                                     </div>
@@ -908,27 +908,27 @@ export default function AnalyticsPage() {
                         </CardContent>
 
                         {/* Input Area */}
-                        <div className="p-6 bg-white border-t border-slate-100 shrink-0">
+                        <div className="p-6 bg-card border-t border-slate-100 shrink-0">
                             <form onSubmit={handleSubmit} className="relative">
-                                <div className="relative flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl p-1.5 pl-6 focus-within:border-slate-400 focus-within:bg-white transition-all shadow-sm">
+                                <div className="relative flex items-center gap-3 bg-muted border border-border rounded-xl p-1.5 pl-6 focus-within:border-slate-400 focus-within:bg-card transition-all shadow-sm">
                                     <Input
                                         value={query}
                                         onChange={(e) => setQuery(e.target.value)}
                                         placeholder={selectedDataset ? "Ask a question about your data..." : "Select a dataset to begin..."}
-                                        className="bg-transparent border-none focus-visible:ring-0 shadow-none text-sm h-11 flex-1 placeholder:text-slate-400 text-slate-900"
+                                        className="bg-transparent border-none focus-visible:ring-0 shadow-none text-sm h-11 flex-1 placeholder:text-muted-foreground text-foreground"
                                         disabled={!selectedDataset || loading}
                                     />
                                     <Button
                                         type="submit"
                                         disabled={!selectedDataset || loading || !query.trim()}
-                                        className="h-10 px-5 rounded-lg bg-slate-900 text-white hover:bg-black transition-all font-medium text-xs shadow-sm"
+                                        className="h-10 px-5 rounded-lg bg-primary text-white hover:bg-black transition-all font-medium text-xs shadow-sm"
                                     >
                                         <Send className="w-3.5 h-3.5 mr-2" />
                                         Send
                                     </Button>
                                 </div>
                             </form>
-                            <div className="mt-3 px-1 flex items-center justify-between text-[10px] font-medium text-slate-400 uppercase tracking-widest">
+                            <div className="mt-3 px-1 flex items-center justify-between text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
                                 <span>Agent V1.0</span>
                                 <span>Press Enter to Submit</span>
                             </div>

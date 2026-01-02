@@ -145,23 +145,23 @@ export default function ConversationalAnalyticsPage() {
     const selectedDatasetInfo = datasets.find((d) => d.id === selectedDataset);
 
     return (
-        <div className="h-screen flex flex-col bg-slate-50">
+        <div className="h-screen flex flex-col bg-muted">
             {/* Header */}
-            <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+            <div className="bg-card border-b border-border px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => navigate('/analytics')}
-                        className="text-slate-500 hover:text-slate-900"
+                        className="text-muted-foreground hover:text-foreground"
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back
                     </Button>
                     <div>
-                        <h1 className="text-xl font-bold text-slate-900">Conversational Analytics</h1>
+                        <h1 className="text-xl font-bold text-foreground">Conversational Analytics</h1>
                         {selectedDatasetInfo && (
-                            <p className="text-sm text-slate-500">{selectedDatasetInfo.name}</p>
+                            <p className="text-sm text-muted-foreground">{selectedDatasetInfo.name}</p>
                         )}
                     </div>
                 </div>
@@ -175,7 +175,7 @@ export default function ConversationalAnalyticsPage() {
                             setCurrentConversation(null);
                             setMessages([]);
                         }}
-                        className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                        className="px-3 py-2 bg-card border border-border rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                     >
                         <option value="">Select dataset...</option>
                         {datasets.map((dataset) => (
@@ -210,10 +210,10 @@ export default function ConversationalAnalyticsPage() {
                                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center mb-6 shadow-lg mx-auto">
                                     <Sparkles className="w-8 h-8 text-white" />
                                 </div>
-                                <h3 className="text-2xl font-bold mb-2 text-slate-900">
+                                <h3 className="text-2xl font-bold mb-2 text-foreground">
                                     Start a conversation
                                 </h3>
-                                <p className="text-slate-500 mb-8">
+                                <p className="text-muted-foreground mb-8">
                                     Ask questions about your data in natural language
                                 </p>
 
@@ -230,7 +230,7 @@ export default function ConversationalAnalyticsPage() {
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
                                             onClick={() => setQuery(suggestion)}
-                                            className="p-4 text-left bg-white border border-slate-200 rounded-xl hover:border-purple-300 hover:shadow-md transition-all"
+                                            className="p-4 text-left bg-card border border-border rounded-xl hover:border-purple-300 hover:shadow-md transition-all"
                                         >
                                             <p className="text-sm text-slate-700">{suggestion}</p>
                                         </motion.button>
@@ -261,7 +261,7 @@ export default function ConversationalAnalyticsPage() {
                                             <Loader2 className="w-4 h-4 text-white animate-spin" />
                                         </div>
                                         <div className="glass rounded-2xl px-4 py-3">
-                                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                 <span className="animate-pulse">Thinking...</span>
                                             </div>
                                         </div>
@@ -275,7 +275,7 @@ export default function ConversationalAnalyticsPage() {
             </div>
 
             {/* Input Area */}
-            <div className="bg-white border-t border-slate-200 px-6 py-4">
+            <div className="bg-card border-t border-border px-6 py-4">
                 <div className="max-w-4xl mx-auto">
                     <form onSubmit={handleSubmit} className="flex gap-3">
                         <input
@@ -288,7 +288,7 @@ export default function ConversationalAnalyticsPage() {
                                     : 'Select a dataset first...'
                             }
                             disabled={!selectedDataset || sending}
-                            className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 px-4 py-3 bg-muted border border-border rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-card transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                         <Button
                             type="submit"

@@ -58,9 +58,9 @@ export default function ConversationMessage({
                 {/* Main Message Bubble */}
                 <div className={`rounded-2xl px-4 py-3 ${isUser
                         ? 'bg-gradient-to-br from-purple-600 to-blue-600 text-white ml-auto'
-                        : 'glass border border-slate-200'
+                        : 'glass border border-border'
                     }`}>
-                    <p className={`text-sm ${isUser ? 'text-white' : 'text-slate-900'} whitespace-pre-wrap`}>
+                    <p className={`text-sm ${isUser ? 'text-white' : 'text-foreground'} whitespace-pre-wrap`}>
                         {content}
                     </p>
                 </div>
@@ -74,7 +74,7 @@ export default function ConversationMessage({
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.1 }}
-                                className="flex items-center gap-2 text-xs text-slate-500"
+                                className="flex items-center gap-2 text-xs text-muted-foreground"
                             >
                                 {step.status === 'complete' ? (
                                     <CheckCircle className="w-3 h-3 text-green-500" />
@@ -94,7 +94,7 @@ export default function ConversationMessage({
                     <div className="w-full mt-2">
                         <button
                             onClick={() => setShowSQL(!showSQL)}
-                            className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-700 transition-colors"
+                            className="flex items-center gap-2 text-xs text-muted-foreground hover:text-slate-700 transition-colors"
                         >
                             <Database className="w-3 h-3" />
                             <span>{showSQL ? 'Hide' : 'Show'} Generated SQL</span>
@@ -123,7 +123,7 @@ export default function ConversationMessage({
                     <div className="w-full mt-2">
                         <button
                             onClick={() => setShowData(!showData)}
-                            className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-700 transition-colors"
+                            className="flex items-center gap-2 text-xs text-muted-foreground hover:text-slate-700 transition-colors"
                         >
                             <span>{showData ? 'Hide' : 'Show'} Data ({queryData.result_data.length} rows)</span>
                         </button>
@@ -132,11 +132,11 @@ export default function ConversationMessage({
                             <motion.div
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: 'auto', opacity: 1 }}
-                                className="mt-2 rounded-lg border border-slate-200 overflow-hidden"
+                                className="mt-2 rounded-lg border border-border overflow-hidden"
                             >
                                 <div className="overflow-x-auto max-h-64">
                                     <table className="w-full text-xs">
-                                        <thead className="bg-slate-50 border-b border-slate-200">
+                                        <thead className="bg-muted border-b border-border">
                                             <tr>
                                                 {queryData.columns.map((col, i) => (
                                                     <th key={i} className="px-3 py-2 text-left font-semibold text-slate-700">
@@ -147,7 +147,7 @@ export default function ConversationMessage({
                                         </thead>
                                         <tbody>
                                             {queryData.result_data.slice(0, 10).map((row, i) => (
-                                                <tr key={i} className="border-b border-slate-100 hover:bg-slate-50">
+                                                <tr key={i} className="border-b border-slate-100 hover:bg-muted">
                                                     {queryData.columns!.map((col, j) => (
                                                         <td key={j} className="px-3 py-2 text-slate-600">
                                                             {row[col] !== null && row[col] !== undefined ? String(row[col]) : 'N/A'}
@@ -159,7 +159,7 @@ export default function ConversationMessage({
                                     </table>
                                 </div>
                                 {queryData.result_data.length > 10 && (
-                                    <div className="px-3 py-2 bg-slate-50 text-xs text-slate-500 text-center border-t border-slate-200">
+                                    <div className="px-3 py-2 bg-muted text-xs text-muted-foreground text-center border-t border-border">
                                         Showing 10 of {queryData.result_data.length} rows
                                     </div>
                                 )}

@@ -36,7 +36,7 @@ export default function Sidebar() {
     return (
         <aside
             className={cn(
-                "h-screen bg-slate-50 border-r border-slate-200 transition-all duration-500 flex flex-col z-50 relative shrink-0",
+                "h-screen bg-muted border-r border-border transition-all duration-500 flex flex-col z-50 relative shrink-0",
                 collapsed ? "w-20" : "w-72"
             )}
         >
@@ -50,7 +50,7 @@ export default function Sidebar() {
                         <motion.span
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="font-bold text-xl tracking-tight whitespace-nowrap text-slate-900"
+                            className="font-bold text-xl tracking-tight whitespace-nowrap text-foreground"
                         >
                             Antigravity
                         </motion.span>
@@ -72,13 +72,13 @@ export default function Sidebar() {
                             className={cn(
                                 "flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
                                 isActive
-                                    ? "bg-white text-slate-900 shadow-sm border border-slate-200"
-                                    : "text-slate-500 hover:bg-slate-200/50 hover:text-slate-900"
+                                    ? "bg-card text-foreground shadow-sm border border-border"
+                                    : "text-muted-foreground hover:bg-slate-200/50 hover:text-foreground"
                             )}
                         >
                             <item.icon className={cn(
                                 "w-4 h-4 flex-shrink-0",
-                                isActive ? "text-slate-900" : "text-slate-400 group-hover:text-slate-900"
+                                isActive ? "text-foreground" : "text-slate-400 group-hover:text-foreground"
                             )} />
                             {!collapsed && (
                                 <motion.span
@@ -95,7 +95,7 @@ export default function Sidebar() {
             </nav>
 
             {/* Footer / User Profile */}
-            <div className="p-6 border-t border-slate-200 bg-slate-100/30">
+            <div className="p-6 border-t border-border bg-slate-100/30">
                 <AnimatePresence>
                     {!collapsed && (
                         <motion.div
@@ -104,13 +104,13 @@ export default function Sidebar() {
                             exit={{ opacity: 0, y: 10 }}
                             className="mb-6 px-2"
                         >
-                            <div className="flex items-center gap-4 p-2.5 rounded-xl bg-white border border-slate-200 shadow-sm">
+                            <div className="flex items-center gap-4 p-2.5 rounded-xl bg-card border border-border shadow-sm">
                                 <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 shrink-0">
                                     {user?.username?.[0].toUpperCase() || 'U'}
                                 </div>
                                 <div className="overflow-hidden">
-                                    <p className="text-xs font-bold truncate text-slate-900">{user?.username || 'Guest'}</p>
-                                    <p className="text-[10px] text-slate-500 truncate uppercase tracking-wider">Free Plan</p>
+                                    <p className="text-xs font-bold truncate text-foreground">{user?.username || 'Guest'}</p>
+                                    <p className="text-[10px] text-muted-foreground truncate uppercase tracking-wider">Free Plan</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -122,7 +122,7 @@ export default function Sidebar() {
                         variant="ghost"
                         size={collapsed ? "icon" : "sm"}
                         className={cn(
-                            "w-full justify-start gap-4 text-slate-500 hover:text-slate-900 hover:bg-slate-200/50 rounded-lg h-10 px-4 transition-all",
+                            "w-full justify-start gap-4 text-muted-foreground hover:text-foreground hover:bg-slate-200/50 rounded-lg h-10 px-4 transition-all",
                             collapsed && "justify-center"
                         )}
                     >
@@ -132,7 +132,7 @@ export default function Sidebar() {
                     <button
                         onClick={logout}
                         className={cn(
-                            "w-full flex items-center justify-start gap-4 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg h-10 px-4 transition-all group",
+                            "w-full flex items-center justify-start gap-4 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg h-10 px-4 transition-all group",
                             collapsed && "justify-center"
                         )}
                     >
@@ -145,7 +145,7 @@ export default function Sidebar() {
             {/* Collapse Toggle */}
             <button
                 onClick={() => setCollapsed(!collapsed)}
-                className="absolute -right-3 top-24 w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:scale-110 transition-all z-50 shadow-sm"
+                className="absolute -right-3 top-24 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:scale-110 transition-all z-50 shadow-sm"
             >
                 {collapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
             </button>

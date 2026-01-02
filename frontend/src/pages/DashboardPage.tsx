@@ -65,10 +65,10 @@ export default function DashboardPage() {
             {/* Header / Welcome Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">
                         Dashboard
                     </h1>
-                    <p className="text-slate-500 mt-1">
+                    <p className="text-muted-foreground mt-1">
                         Overview of your workspace and recent analytical activity.
                     </p>
                 </div>
@@ -84,10 +84,10 @@ export default function DashboardPage() {
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: "Datasets", value: datasets.length, icon: Database, color: "text-slate-900" },
-                    { label: "Analyses", value: recentQueries.length, icon: BarChart3, color: "text-slate-900" },
-                    { label: "Success Rate", value: recentQueries.length > 0 ? `${Math.round((recentQueries.filter(q => q.status === 'success').length / recentQueries.length) * 100)}%` : '0%', icon: Zap, color: "text-slate-900" },
-                    { label: "Connections", value: connections.length, icon: Network, color: "text-slate-900" }
+                    { label: "Datasets", value: datasets.length, icon: Database, color: "text-foreground" },
+                    { label: "Analyses", value: recentQueries.length, icon: BarChart3, color: "text-foreground" },
+                    { label: "Success Rate", value: recentQueries.length > 0 ? `${Math.round((recentQueries.filter(q => q.status === 'success').length / recentQueries.length) * 100)}%` : '0%', icon: Zap, color: "text-foreground" },
+                    { label: "Connections", value: connections.length, icon: Network, color: "text-foreground" }
                 ].map((stat, i) => (
                     <motion.div
                         key={i}
@@ -95,15 +95,15 @@ export default function DashboardPage() {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: i * 0.05 }}
                     >
-                        <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+                        <Card className="bg-card border-border shadow-sm hover:shadow-md transition-shadow duration-300">
                             <CardContent className="p-6">
                                 <div className="flex items-center gap-3 mb-3">
-                                    <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                                    <div className="p-2 rounded-lg bg-muted border border-slate-100">
                                         <stat.icon className={`h-4 w-4 ${stat.color}`} />
                                     </div>
-                                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.label}</p>
+                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{stat.label}</p>
                                 </div>
-                                <div className="text-2xl font-bold tracking-tight text-slate-900">{stat.value}</div>
+                                <div className="text-2xl font-bold tracking-tight text-foreground">{stat.value}</div>
                             </CardContent>
                         </Card>
                     </motion.div>
@@ -119,7 +119,7 @@ export default function DashboardPage() {
                     {/* Active Insights / Widgets */}
                     <div>
                         <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
-                            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
                                 Pinned Insights
                             </h2>
                         </div>
@@ -136,10 +136,10 @@ export default function DashboardPage() {
                                             transition={{ delay: widx * 0.1 }}
                                             className={`${isFullWidth ? 'lg:col-span-2' : ''}`}
                                         >
-                                            <Card className="bg-white border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
-                                                <CardHeader className="py-3 px-5 border-b border-slate-50 flex flex-row items-center justify-between bg-slate-50/30">
+                                            <Card className="bg-card border-border shadow-sm overflow-hidden flex flex-col h-full">
+                                                <CardHeader className="py-3 px-5 border-b border-slate-50 flex flex-row items-center justify-between bg-muted/30">
                                                     <div className="flex flex-col">
-                                                        <CardTitle className="text-sm font-bold text-slate-900">
+                                                        <CardTitle className="text-sm font-bold text-foreground">
                                                             {widget.title}
                                                         </CardTitle>
                                                     </div>
@@ -147,7 +147,7 @@ export default function DashboardPage() {
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            className="h-8 w-8 p-0 text-slate-400 hover:text-slate-900"
+                                                            className="h-8 w-8 p-0 text-slate-400 hover:text-foreground"
                                                             onClick={async () => {
                                                                 if (!confirm('Remove this widget?')) return;
 
@@ -169,7 +169,7 @@ export default function DashboardPage() {
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            className="h-8 w-8 p-0 text-slate-400 hover:text-slate-900"
+                                                            className="h-8 w-8 p-0 text-slate-400 hover:text-foreground"
                                                             onClick={async () => {
                                                                 const newLayout = isFullWidth ? 'half' : 'full';
                                                                 const newDashboards = [...dashboards];
@@ -188,7 +188,7 @@ export default function DashboardPage() {
                                                         </Button>
                                                     </div>
                                                 </CardHeader>
-                                                <CardContent className="p-6 flex-1 bg-white">
+                                                <CardContent className="p-6 flex-1 bg-card">
                                                     {widget.python_chart ? (
                                                         <img src={widget.python_chart} className="w-full h-auto rounded-lg border border-slate-100" alt={widget.title} />
                                                     ) : widget.viz_config ? (
@@ -196,7 +196,7 @@ export default function DashboardPage() {
                                                             <ChartRenderer config={widget.viz_config} />
                                                         </div>
                                                     ) : (
-                                                        <div className="w-full p-4 bg-slate-50 rounded-lg text-xs font-mono border border-slate-100 text-slate-600 overflow-x-auto">
+                                                        <div className="w-full p-4 bg-muted rounded-lg text-xs font-mono border border-slate-100 text-slate-600 overflow-x-auto">
                                                             {widget.sql}
                                                         </div>
                                                     )}
@@ -206,14 +206,14 @@ export default function DashboardPage() {
                                     );
                                 })
                             ) : (
-                                <div className="lg:col-span-2 p-12 text-center bg-white rounded-xl border border-dashed border-slate-200">
+                                <div className="lg:col-span-2 p-12 text-center bg-card rounded-xl border border-dashed border-border">
                                     <BarChart3 className="w-12 h-12 mx-auto mb-4 text-slate-200" />
-                                    <h3 className="text-base font-bold text-slate-900 mb-1">No pinned insights</h3>
-                                    <p className="text-slate-500 text-sm max-w-xs mx-auto mb-6">
+                                    <h3 className="text-base font-bold text-foreground mb-1">No pinned insights</h3>
+                                    <p className="text-muted-foreground text-sm max-w-xs mx-auto mb-6">
                                         Analyze your datasets and pin key insights here for quick access.
                                     </p>
                                     <Link to="/analytics">
-                                        <Button variant="outline" size="sm" className="border-slate-200 text-slate-700 hover:bg-slate-50">
+                                        <Button variant="outline" size="sm" className="border-border text-slate-700 hover:bg-muted">
                                             Start Analyzing
                                         </Button>
                                     </Link>
@@ -225,31 +225,31 @@ export default function DashboardPage() {
                     {/* Recent Datasets Section */}
                     <div>
                         <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
-                            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
                                 Inventory
                             </h2>
-                            <Link to="/datasets" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+                            <Link to="/datasets" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                                 View All
                             </Link>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {datasets.slice(0, 4).map((dataset) => (
-                                <Card key={dataset.id} className="bg-white border-slate-200 hover:border-slate-400 shadow-sm transition-all duration-300 group">
+                                <Card key={dataset.id} className="bg-card border-border hover:border-slate-400 shadow-sm transition-all duration-300 group">
                                     <CardContent className="p-4 flex items-center justify-between">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-slate-100 transition-colors">
-                                                <Database className="w-5 h-5 text-slate-400 group-hover:text-slate-900 transition-colors" />
+                                            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center border border-slate-100 group-hover:bg-slate-100 transition-colors">
+                                                <Database className="w-5 h-5 text-slate-400 group-hover:text-foreground transition-colors" />
                                             </div>
                                             <div>
-                                                <div className="font-bold text-sm text-slate-900">{dataset.name}</div>
+                                                <div className="font-bold text-sm text-foreground">{dataset.name}</div>
                                                 <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                                                     {dataset.row_count?.toLocaleString()} rows
                                                 </div>
                                             </div>
                                         </div>
                                         <Link to="/analytics" state={{ datasetId: dataset.id }}>
-                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full text-slate-400 hover:text-slate-900">
+                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full text-slate-400 hover:text-foreground">
                                                 <ExternalLink className="w-4 h-4" />
                                             </Button>
                                         </Link>
@@ -272,19 +272,19 @@ export default function DashboardPage() {
                         </CardHeader>
                         <CardContent className="p-6 pt-2 space-y-2">
                             <Link to="/datasets">
-                                <Button className="w-full justify-start gap-3 bg-white/10 hover:bg-white/20 text-white border-none text-sm h-11 transition-all">
+                                <Button className="w-full justify-start gap-3 bg-card/10 hover:bg-card/20 text-white border-none text-sm h-11 transition-all">
                                     <Upload className="w-4 h-4" />
                                     Import Dataset
                                 </Button>
                             </Link>
                             <Link to="/analytics">
-                                <Button className="w-full justify-start gap-3 bg-white/10 hover:bg-white/20 text-white border-none text-sm h-11 transition-all">
+                                <Button className="w-full justify-start gap-3 bg-card/10 hover:bg-card/20 text-white border-none text-sm h-11 transition-all">
                                     <Search className="w-4 h-4" />
                                     Explore Data
                                 </Button>
                             </Link>
                             <Link to="/connections">
-                                <Button className="w-full justify-start gap-3 bg-white/10 hover:bg-white/20 text-white border-none text-sm h-11 transition-all">
+                                <Button className="w-full justify-start gap-3 bg-card/10 hover:bg-card/20 text-white border-none text-sm h-11 transition-all">
                                     <Network className="w-4 h-4" />
                                     Configure Sources
                                 </Button>
@@ -293,8 +293,8 @@ export default function DashboardPage() {
                     </Card>
 
                     {/* Recent Queries Feed */}
-                    <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100">
-                        <h2 className="text-sm font-bold text-slate-900 mb-6 flex items-center gap-2">
+                    <div className="bg-muted/50 p-6 rounded-2xl border border-slate-100">
+                        <h2 className="text-sm font-bold text-foreground mb-6 flex items-center gap-2">
                             Intelligence Log
                         </h2>
                         <div className="space-y-6">
@@ -305,7 +305,7 @@ export default function DashboardPage() {
                                         <div className={`absolute left-0 top-1.5 w-2 h-2 rounded-full ${query.status === 'success' ? 'bg-slate-900' : 'bg-red-500'}`} />
 
                                         <div className="space-y-1">
-                                            <p className="text-xs font-medium text-slate-900 leading-relaxed line-clamp-2">
+                                            <p className="text-xs font-medium text-foreground leading-relaxed line-clamp-2">
                                                 {query.natural_language_query}
                                             </p>
                                             <div className="flex items-center gap-3">

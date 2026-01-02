@@ -84,10 +84,10 @@ export default function HistoryPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">
                         Chat History
                     </h1>
-                    <p className="text-slate-500 mt-1">Resume your past analysis sessions.</p>
+                    <p className="text-muted-foreground mt-1">Resume your past analysis sessions.</p>
                 </div>
                 <div className="relative w-full md:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -95,15 +95,15 @@ export default function HistoryPage() {
                         placeholder="Search sessions..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 bg-white"
+                        className="pl-10 bg-card"
                     />
                 </div>
             </div>
 
             {/* History List */}
-            <Card className="bg-white border-slate-200 shadow-sm">
-                <CardHeader className="border-b border-slate-50 bg-slate-50/30">
-                    <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2 text-slate-500">
+            <Card className="bg-card border-border shadow-sm">
+                <CardHeader className="border-b border-slate-50 bg-muted/30">
+                    <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2 text-muted-foreground">
                         <HistoryIcon className="w-4 h-4" /> Past Sessions
                     </CardTitle>
                 </CardHeader>
@@ -125,7 +125,7 @@ export default function HistoryPage() {
                                     initial={{ opacity: 0, y: 5 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: idx * 0.05 }}
-                                    className="p-4 hover:bg-slate-50 transition-colors group flex items-start justify-between gap-4 cursor-pointer"
+                                    className="p-4 hover:bg-muted transition-colors group flex items-start justify-between gap-4 cursor-pointer"
                                     onClick={() => item.dataset_id && handleContinue(item.dataset_id, item.session_id)}
                                 >
                                     <div className="flex gap-4">
@@ -133,8 +133,8 @@ export default function HistoryPage() {
                                             <MessageSquare className="w-5 h-5 text-indigo-500" />
                                         </div>
                                         <div>
-                                            <p className="font-medium text-slate-900 line-clamp-1">{item.first_query}</p>
-                                            <div className="flex items-center gap-4 mt-1 text-xs text-slate-500">
+                                            <p className="font-medium text-foreground line-clamp-1">{item.first_query}</p>
+                                            <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                                                 {item.dataset_id && (
                                                     <span className="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-full">
                                                         <Database className="w-3 h-3" />

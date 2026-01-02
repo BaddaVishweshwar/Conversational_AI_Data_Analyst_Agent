@@ -92,7 +92,7 @@ export default function ConversationMessageV2({
         const CustomTooltip = ({ active, payload, label }: any) => {
             if (active && payload && payload.length) {
                 return (
-                    <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+                    <div className="bg-card p-3 border border-border rounded-lg shadow-lg">
                         <p className="font-semibold text-slate-700 mb-1">{label}</p>
                         {payload.map((entry: any, index: number) => (
                             <div key={index} className="text-sm text-slate-600">
@@ -207,9 +207,9 @@ export default function ConversationMessageV2({
                 const kpiKey = y_axis?.[0] || 'value';
                 const kpiValue = data[0]?.[kpiKey];
                 return (
-                    <div className="flex flex-col items-center justify-center h-full border border-slate-100 rounded-lg p-6 bg-slate-50">
+                    <div className="flex flex-col items-center justify-center h-full border border-slate-100 rounded-lg p-6 bg-muted">
                         <div className="text-4xl font-bold text-slate-800">{typeof kpiValue === 'number' ? kpiValue.toLocaleString() : kpiValue}</div>
-                        <div className="text-sm text-slate-500 mt-2">{vizConfig.title}</div>
+                        <div className="text-sm text-muted-foreground mt-2">{vizConfig.title}</div>
                     </div>
                 );
             default:
@@ -251,9 +251,9 @@ export default function ConversationMessageV2({
 
             <div className="flex-1 space-y-4">
                 {/* Main Insight Card */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
                     {/* Header: Direct Answer */}
-                    <div className="bg-slate-50/50 p-6 border-b border-slate-100">
+                    <div className="bg-muted/50 p-6 border-b border-slate-100">
                         {hasInsights ? (
                             <p className="text-lg font-medium text-slate-800 leading-relaxed">
                                 {queryData.insights?.direct_answer}
@@ -303,9 +303,9 @@ export default function ConversationMessageV2({
                                     </h4>
                                     <div className={`grid gap-4 ${activeVisualizations.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                                         {activeVisualizations.map((viz, idx) => (
-                                            <div key={idx} className={`bg-white border border-slate-100 rounded-xl p-4 shadow-sm ${viz.chart_type === 'kpi' ? 'md:col-span-1' : 'md:col-span-2'}`}>
+                                            <div key={idx} className={`bg-card border border-slate-100 rounded-xl p-4 shadow-sm ${viz.chart_type === 'kpi' ? 'md:col-span-1' : 'md:col-span-2'}`}>
                                                 {viz.title && <h5 className="text-sm font-medium text-slate-700 mb-2">{viz.title}</h5>}
-                                                {viz.description && <p className="text-xs text-slate-500 mb-4">{viz.description}</p>}
+                                                {viz.description && <p className="text-xs text-muted-foreground mb-4">{viz.description}</p>}
                                                 {renderChart(viz)}
                                             </div>
                                         ))}
@@ -322,7 +322,7 @@ export default function ConversationMessageV2({
                                     </h4>
                                     <ul className="space-y-3">
                                         {queryData.insights?.what_data_shows && queryData.insights.what_data_shows.map((item, i) => (
-                                            <li key={i} className="flex items-start gap-3 text-sm text-slate-700 bg-slate-50 p-3 rounded-lg">
+                                            <li key={i} className="flex items-start gap-3 text-sm text-slate-700 bg-muted p-3 rounded-lg">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
                                                 <span>{item}</span>
                                             </li>
@@ -372,7 +372,7 @@ export default function ConversationMessageV2({
                     {processingSteps && processingSteps.length > 0 && (
                         <button
                             onClick={() => setShowSteps(!showSteps)}
-                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-500 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-all"
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-muted-foreground bg-card border border-border rounded-full hover:bg-muted transition-all"
                         >
                             {showSteps ? <ChevronUp className="w-3 h-3" /> : <Loader2 className="w-3 h-3" />}
                             {showSteps ? 'Hide Process' : 'Show Process'}
@@ -382,7 +382,7 @@ export default function ConversationMessageV2({
                     {queryData?.generated_sql && (
                         <button
                             onClick={() => setShowSQL(!showSQL)}
-                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-500 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-all"
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-muted-foreground bg-card border border-border rounded-full hover:bg-muted transition-all"
                         >
                             {showSQL ? <ChevronUp className="w-3 h-3" /> : <Code className="w-3 h-3" />}
                             {showSQL ? 'Hide SQL' : 'Show SQL'}
@@ -392,7 +392,7 @@ export default function ConversationMessageV2({
                     {queryData?.result_data && (
                         <button
                             onClick={() => setShowData(!showData)}
-                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-500 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-all"
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-muted-foreground bg-card border border-border rounded-full hover:bg-muted transition-all"
                         >
                             {showData ? <ChevronUp className="w-3 h-3" /> : <Database className="w-3 h-3" />}
                             {showData ? 'Hide Data' : `Show Data (${queryData.result_data.length} rows)`}
@@ -456,10 +456,10 @@ export default function ConversationMessageV2({
                             exit={{ height: 0, opacity: 0 }}
                             className="overflow-hidden"
                         >
-                            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                            <div className="bg-card border border-border rounded-xl overflow-hidden">
                                 <div className="overflow-x-auto max-h-96">
                                     <table className="w-full text-sm">
-                                        <thead className="bg-slate-50 border-b border-slate-200">
+                                        <thead className="bg-muted border-b border-border">
                                             <tr>
                                                 {queryData.columns?.map((col, i) => (
                                                     <th key={i} className="px-4 py-3 text-left font-semibold text-slate-700 whitespace-nowrap">
@@ -470,9 +470,9 @@ export default function ConversationMessageV2({
                                         </thead>
                                         <tbody>
                                             {queryData.result_data.map((row, i) => (
-                                                <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 group">
+                                                <tr key={i} className="border-b border-slate-100 hover:bg-muted group">
                                                     {queryData.columns?.map((col, j) => (
-                                                        <td key={j} className="px-4 py-2.5 text-slate-600 group-hover:text-slate-900 whitespace-nowrap">
+                                                        <td key={j} className="px-4 py-2.5 text-slate-600 group-hover:text-foreground whitespace-nowrap">
                                                             {row[col] !== null ? String(row[col]) : '-'}
                                                         </td>
                                                     ))}

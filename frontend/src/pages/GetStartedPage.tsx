@@ -29,17 +29,17 @@ const GetStartedPage = () => {
         {
             title: "Connect your data source",
             description: "Link your database, CSVs, or API endpoints. Our engine handles the structural mapping automatically.",
-            icon: <div className="w-10 h-10 rounded-full bg-[#f3f4f6] flex items-center justify-center text-slate-900 font-bold border border-slate-200">1</div>
+            icon: <div className="w-10 h-10 rounded-full bg-[#f3f4f6] flex items-center justify-center text-foreground font-bold border border-border">1</div>
         },
         {
             title: "Configure AI Expertise",
             description: "Define the business context and objectives. Our RAG engine builds a semantic index of your domain.",
-            icon: <div className="w-10 h-10 rounded-full bg-[#f3f4f6] flex items-center justify-center text-slate-900 font-bold border border-slate-200">2</div>
+            icon: <div className="w-10 h-10 rounded-full bg-[#f3f4f6] flex items-center justify-center text-foreground font-bold border border-border">2</div>
         },
         {
             title: "Unlock Instant Insights",
             description: "Chat with your data, generate SQL, and build dashboards in seconds without writing a line of code.",
-            icon: <div className="w-10 h-10 rounded-full bg-[#f3f4f6] flex items-center justify-center text-slate-900 font-bold border border-slate-200">3</div>
+            icon: <div className="w-10 h-10 rounded-full bg-[#f3f4f6] flex items-center justify-center text-foreground font-bold border border-border">3</div>
         }
     ]
 
@@ -51,15 +51,15 @@ const GetStartedPage = () => {
                     <div className="w-8 h-8 bg-black rounded flex items-center justify-center">
                         <BarChart3 className="w-5 h-5 text-white" />
                     </div>
-                    <span className="text-xl font-bold tracking-tight text-slate-900">Antigravity</span>
+                    <span className="text-xl font-bold tracking-tight text-foreground">Antigravity</span>
                 </Link>
-                <div className="hidden sm:flex items-center gap-6 text-sm font-medium text-slate-500">
+                <div className="hidden sm:flex items-center gap-6 text-sm font-medium text-muted-foreground">
                     <Link to="/#features" className="hover:text-black transition-colors">How it works</Link>
-                    <Link to="/login" className="px-4 py-2 border border-slate-200 rounded-lg hover:border-slate-400 hover:bg-white text-slate-900 transition-all">Log in</Link>
+                    <Link to="/login" className="px-4 py-2 border border-border rounded-lg hover:border-slate-400 hover:bg-card text-foreground transition-all">Log in</Link>
                 </div>
             </header>
 
-            <main className="flex-1 flex flex-col items-center justify-center px-6 py-20 bg-white">
+            <main className="flex-1 flex flex-col items-center justify-center px-6 py-20 bg-card">
                 <div className="max-w-4xl w-full">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -67,7 +67,7 @@ const GetStartedPage = () => {
                         transition={{ duration: 0.5 }}
                         className="text-center mb-16"
                     >
-                        <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6 tracking-tight">
+                        <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 tracking-tight">
                             Start building with Antigravity AI.
                         </h1>
                         <p className="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
@@ -90,8 +90,8 @@ const GetStartedPage = () => {
                                         {step.icon}
                                     </div>
                                     <div className="space-y-2">
-                                        <h3 className="font-bold text-slate-900 text-lg">{step.title}</h3>
-                                        <p className="text-slate-500 leading-relaxed text-sm">
+                                        <h3 className="font-bold text-foreground text-lg">{step.title}</h3>
+                                        <p className="text-muted-foreground leading-relaxed text-sm">
                                             {step.description}
                                         </p>
                                     </div>
@@ -104,7 +104,7 @@ const GetStartedPage = () => {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.5 }}
-                            className="bg-white border-2 border-slate-100 rounded-3xl p-10 shadow-2xl shadow-slate-200/50"
+                            className="bg-card border-2 border-slate-100 rounded-3xl p-10 shadow-2xl shadow-slate-200/50"
                         >
                             <div className="mb-8 p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-start gap-3">
                                 <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
@@ -116,7 +116,7 @@ const GetStartedPage = () => {
                             <div className="space-y-6">
                                 <div className="flex flex-col gap-4">
                                     <p className="text-sm font-bold text-slate-400 uppercase tracking-widest text-center">Step 1: Authenticate</p>
-                                    <div className="flex justify-center border border-slate-200 rounded-xl p-4 bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                                    <div className="flex justify-center border border-border rounded-xl p-4 bg-muted/50 hover:bg-muted transition-colors">
                                         <GoogleLogin
                                             onSuccess={handleGoogleSuccess}
                                             onError={() => console.log('Login Failed')}
@@ -133,7 +133,7 @@ const GetStartedPage = () => {
                                         <span className="w-full border-t border-slate-100" />
                                     </div>
                                     <div className="relative flex justify-center text-xs uppercase">
-                                        <span className="bg-white px-2 text-slate-400 font-medium">Or Use Email</span>
+                                        <span className="bg-card px-2 text-slate-400 font-medium">Or Use Email</span>
                                     </div>
                                 </div>
 
@@ -146,7 +146,7 @@ const GetStartedPage = () => {
                                 </Link>
 
                                 <p className="text-xs text-center text-slate-400 leading-relaxed">
-                                    By continuing, you agree to our <a href="#" className="underline hover:text-slate-900">Terms</a> and <a href="#" className="underline hover:text-slate-900">Privacy Policy</a>.
+                                    By continuing, you agree to our <a href="#" className="underline hover:text-foreground">Terms</a> and <a href="#" className="underline hover:text-foreground">Privacy Policy</a>.
                                 </p>
                             </div>
                         </motion.div>
@@ -157,8 +157,8 @@ const GetStartedPage = () => {
             {/* Founder note / Social proof */}
             <section className="bg-[#fafafa] py-20">
                 <div className="max-w-4xl mx-auto px-6">
-                    <div className="bg-white border border-slate-200 p-8 md:p-12 rounded-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 -mr-16 -mt-16 rounded-full" />
+                    <div className="bg-card border border-border p-8 md:p-12 rounded-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-muted -mr-16 -mt-16 rounded-full" />
                         <p className="text-slate-700 italic text-lg leading-relaxed mb-8 relative z-10">
                             "Most analytics tools focus on fancy charts. At Antigravity, we focus on the bridge between data and decisions. We're building the infrastructure for the next generation of data-literate companies."
                         </p>
@@ -167,15 +167,15 @@ const GetStartedPage = () => {
                                 <img src="/placeholder-avatar.jpg" alt="Founder" className="w-full h-full object-cover" />
                             </div>
                             <div>
-                                <h4 className="font-bold text-slate-900">Alex Rivera</h4>
-                                <p className="text-sm text-slate-500">Founder & CEO, Antigravity AI</p>
+                                <h4 className="font-bold text-foreground">Alex Rivera</h4>
+                                <p className="text-sm text-muted-foreground">Founder & CEO, Antigravity AI</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <footer className="py-12 border-t border-slate-100 bg-white">
+            <footer className="py-12 border-t border-slate-100 bg-card">
                 <div className="container mx-auto px-8 flex flex-col md:flex-row items-center justify-between gap-6 text-sm text-slate-400 font-medium">
                     <span>© 2025 Antigravity AI. All rights reserved.</span>
                     <div className="flex gap-8">

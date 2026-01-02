@@ -35,11 +35,11 @@ const features = [
 
 export default function Features() {
     return (
-        <div id="features" className="py-32 bg-white border-t border-slate-100 relative">
+        <div id="features" className="py-32 bg-card border-t border-slate-100 relative">
             <div className="container px-4 md:px-6 relative z-10">
                 <div className="max-w-3xl mb-24">
-                    <h2 className="text-4xl font-bold text-slate-900 mb-6 tracking-tight">Built for the next generation of analysts.</h2>
-                    <p className="text-slate-500 text-xl leading-relaxed">
+                    <h2 className="text-4xl font-bold text-foreground mb-6 tracking-tight">Built for the next generation of analysts.</h2>
+                    <p className="text-muted-foreground text-xl leading-relaxed">
                         Antigravity bypasses traditional BI bottlenecks. We provide the speed of a chatbot with the precision of a veteran data engineering team.
                     </p>
                 </div>
@@ -50,14 +50,14 @@ export default function Features() {
                             key={index}
                             className="group flex flex-col items-start gap-4"
                         >
-                            <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center transition-all group-hover:bg-slate-900 group-hover:border-slate-900 group-hover:text-white group-hover:shadow-lg group-hover:shadow-slate-200">
+                            <div className="w-10 h-10 rounded-lg bg-muted border border-border flex items-center justify-center transition-all group-hover:bg-slate-900 group-hover:border-slate-900 group-hover:text-white group-hover:shadow-lg group-hover:shadow-slate-200">
                                 <div className="group-hover:text-white transition-colors">
                                     {feature.icon}
                                 </div>
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-slate-900 mb-2">{feature.title}</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed">{feature.description}</p>
+                                <h3 className="text-lg font-bold text-foreground mb-2">{feature.title}</h3>
+                                <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
                             </div>
                         </div>
                     ))}

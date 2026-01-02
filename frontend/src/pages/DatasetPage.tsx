@@ -155,10 +155,10 @@ export default function DatasetPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
-                    <h1 className="text-4xl font-bold font-display tracking-tight text-slate-900">
+                    <h1 className="text-4xl font-bold font-display tracking-tight text-foreground">
                         Data Source Manager
                     </h1>
-                    <p className="text-slate-500 mt-2">
+                    <p className="text-muted-foreground mt-2">
                         Import and manage the raw datasets feeding your AI engine.
                     </p>
                 </div>
@@ -168,31 +168,31 @@ export default function DatasetPage() {
 
                 {/* Left: Upload Zone */}
                 <div className="lg:col-span-1">
-                    <Card className="bg-white border border-slate-200 shadow-xl overflow-hidden sticky top-8">
-                        <CardHeader className="p-6 border-b border-slate-100 bg-slate-50/50">
-                            <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-slate-900">
-                                <Plus className="w-4 h-4 text-slate-900" /> Import Source
+                    <Card className="bg-card border border-border shadow-xl overflow-hidden sticky top-8">
+                        <CardHeader className="p-6 border-b border-slate-100 bg-muted/50">
+                            <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-foreground">
+                                <Plus className="w-4 h-4 text-foreground" /> Import Source
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-6">
                             <div
                                 {...getRootProps()}
                                 className={`relative group border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 ${isDragActive
-                                    ? 'border-slate-900 bg-slate-50'
-                                    : 'border-slate-200 hover:border-slate-400 hover:bg-slate-50'
+                                    ? 'border-slate-900 bg-muted'
+                                    : 'border-border hover:border-slate-400 hover:bg-muted'
                                     }`}
                             >
                                 <input {...getInputProps()} />
                                 <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${uploading ? 'bg-primary/20' : 'bg-slate-100'}`}>
                                     {uploading ? (
-                                        <Loader2 className="w-8 h-8 text-slate-900 animate-spin" />
+                                        <Loader2 className="w-8 h-8 text-foreground animate-spin" />
                                     ) : (
-                                        <Upload className={`w-8 h-8 ${isDragActive ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                                        <Upload className={`w-8 h-8 ${isDragActive ? 'text-foreground' : 'text-slate-400 group-hover:text-slate-600'}`} />
                                     )}
                                 </div>
 
                                 <div className="space-y-1">
-                                    <p className="text-sm font-bold tracking-tight text-slate-900">
+                                    <p className="text-sm font-bold tracking-tight text-foreground">
                                         {uploading ? 'Uploading...' : isDragActive ? 'Release to Start' : 'Drag & Drop CSV/Excel'}
                                     </p>
                                     <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">
@@ -229,17 +229,17 @@ export default function DatasetPage() {
                     </Card>
 
                     {/* Database Connection Card */}
-                    <Card className="bg-white border border-slate-200 shadow-xl overflow-hidden mt-6">
-                        <CardHeader className="p-6 border-b border-slate-100 bg-slate-50/50">
-                            <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-slate-900">
-                                <Database className="w-4 h-4 text-slate-900" /> Connect Database
+                    <Card className="bg-card border border-border shadow-xl overflow-hidden mt-6">
+                        <CardHeader className="p-6 border-b border-slate-100 bg-muted/50">
+                            <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-foreground">
+                                <Database className="w-4 h-4 text-foreground" /> Connect Database
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-6 space-y-4">
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-500 uppercase">Select Source</label>
+                                <label className="text-xs font-bold text-muted-foreground uppercase">Select Source</label>
                                 <select
-                                    className="w-full text-sm p-2 rounded-md border border-slate-200"
+                                    className="w-full text-sm p-2 rounded-md border border-border"
                                     value={selectedConnId}
                                     onChange={e => setSelectedConnId(e.target.value)}
                                 >
@@ -257,14 +257,14 @@ export default function DatasetPage() {
 
                             {selectedConnId && (
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-500 uppercase">Select Table</label>
+                                    <label className="text-xs font-bold text-muted-foreground uppercase">Select Table</label>
                                     {loadingTables ? (
-                                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                             <Loader2 className="w-3 h-3 animate-spin" /> Fetching tables...
                                         </div>
                                     ) : (
                                         <select
-                                            className="w-full text-sm p-2 rounded-md border border-slate-200"
+                                            className="w-full text-sm p-2 rounded-md border border-border"
                                             value={selectedTable}
                                             onChange={e => setSelectedTable(e.target.value)}
                                         >
@@ -279,9 +279,9 @@ export default function DatasetPage() {
 
                             {selectedConnId && (
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-500 uppercase">Dataset Name</label>
+                                    <label className="text-xs font-bold text-muted-foreground uppercase">Dataset Name</label>
                                     <input
-                                        className="w-full text-sm p-2 rounded-md border border-slate-200"
+                                        className="w-full text-sm p-2 rounded-md border border-border"
                                         placeholder="e.g. Sales DB"
                                         value={dbDatasetName}
                                         onChange={e => setDbDatasetName(e.target.value)}
@@ -307,7 +307,7 @@ export default function DatasetPage() {
                             <input
                                 type="text"
                                 placeholder="Search by filename..."
-                                className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all text-slate-900 placeholder:text-slate-400"
+                                className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-xl text-sm focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all text-foreground placeholder:text-slate-400"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -317,14 +317,14 @@ export default function DatasetPage() {
                     <div className="space-y-4">
                         {loading ? (
                             <div className="py-20 flex flex-col items-center justify-center">
-                                <Loader2 className="w-8 h-8 text-slate-900 animate-spin mb-4" />
+                                <Loader2 className="w-8 h-8 text-foreground animate-spin mb-4" />
                                 <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Synchronizing Files...</span>
                             </div>
                         ) : filteredDatasets.length === 0 ? (
-                            <Card className="bg-white border-dashed border-2 border-slate-200 text-center py-20 shadow-sm">
-                                <FileSpreadsheet className="w-16 h-16 mx-auto mb-4 opacity-20 text-slate-900" />
-                                <h3 className="text-lg font-bold mb-1 text-slate-900">No datasets detected</h3>
-                                <p className="text-slate-500 text-sm max-w-xs mx-auto mb-6">
+                            <Card className="bg-card border-dashed border-2 border-border text-center py-20 shadow-sm">
+                                <FileSpreadsheet className="w-16 h-16 mx-auto mb-4 opacity-20 text-foreground" />
+                                <h3 className="text-lg font-bold mb-1 text-foreground">No datasets detected</h3>
+                                <p className="text-muted-foreground text-sm max-w-xs mx-auto mb-6">
                                     Connect your first data source to begin your analytical journey.
                                 </p>
                             </Card>
@@ -338,12 +338,12 @@ export default function DatasetPage() {
                                         exit={{ opacity: 0, scale: 0.95 }}
                                         transition={{ delay: idx * 0.05 }}
                                     >
-                                        <Card className="bg-white border border-slate-200 hover:border-slate-300 hover:shadow-md transition-all duration-300 group overflow-hidden">
+                                        <Card className="bg-card border border-border hover:border-slate-300 hover:shadow-md transition-all duration-300 group overflow-hidden">
                                             <CardContent className="p-0">
                                                 <div className="flex items-center">
                                                     {/* Preview Icon Column */}
-                                                    <div className="w-20 h-24 bg-slate-50 flex flex-col items-center justify-center shrink-0 group-hover:bg-slate-100 transition-colors border-r border-slate-100">
-                                                        <FileText className="w-8 h-8 text-slate-400 group-hover:text-slate-900 transition-all duration-300" />
+                                                    <div className="w-20 h-24 bg-muted flex flex-col items-center justify-center shrink-0 group-hover:bg-slate-100 transition-colors border-r border-slate-100">
+                                                        <FileText className="w-8 h-8 text-slate-400 group-hover:text-foreground transition-all duration-300" />
                                                         <span className="text-[8px] font-bold text-slate-400 uppercase mt-1 tracking-tighter">
                                                             {dataset.name.split('.').pop()}
                                                         </span>
@@ -352,7 +352,7 @@ export default function DatasetPage() {
                                                     {/* Info Column */}
                                                     <div className="flex-1 px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4">
                                                         <div className="space-y-1">
-                                                            <h4 className="font-bold text-lg tracking-tight truncate max-w-[200px] sm:max-w-[300px] text-slate-900">
+                                                            <h4 className="font-bold text-lg tracking-tight truncate max-w-[200px] sm:max-w-[300px] text-foreground">
                                                                 {dataset.name}
                                                             </h4>
                                                             <div className="flex items-center gap-4">
@@ -388,7 +388,7 @@ export default function DatasetPage() {
 
                                                             <div className="flex items-center gap-2">
                                                                 <Link to="/analytics" state={{ datasetId: dataset.id }}>
-                                                                    <Button variant="outline" size="sm" className="h-9 border-slate-200 text-slate-600 hover:bg-slate-900 hover:border-slate-900 hover:text-white transition-all font-bold text-xs uppercase tracking-widest">
+                                                                    <Button variant="outline" size="sm" className="h-9 border-border text-slate-600 hover:bg-slate-900 hover:border-slate-900 hover:text-white transition-all font-bold text-xs uppercase tracking-widest">
                                                                         Analyze
                                                                     </Button>
                                                                 </Link>

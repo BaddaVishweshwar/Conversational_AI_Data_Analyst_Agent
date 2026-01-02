@@ -251,13 +251,13 @@ export default function AdminPage() {
             // We should probably allow them to see the setup screen.
             // But for now, let's treat "Not Enabled" as "Go to Setup".
             return (
-                <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-                    <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-red-100">
+                <div className="min-h-screen bg-muted flex items-center justify-center p-4">
+                    <div className="max-w-md w-full bg-card rounded-2xl shadow-xl p-8 border border-red-100">
                         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
                             <Shield className="w-8 h-8 text-red-600" />
                         </div>
                         <h2 className="text-2xl font-bold text-center mb-2">2FA Setup Required</h2>
-                        <p className="text-center text-slate-500 mb-8">
+                        <p className="text-center text-muted-foreground mb-8">
                             You must set up Two-Factor Authentication to access the admin panel.
                         </p>
                         <TwoFactorSetup onComplete={() => window.location.reload()} />
@@ -267,17 +267,17 @@ export default function AdminPage() {
         }
 
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+            <div className="min-h-screen bg-muted flex items-center justify-center p-4">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-slate-100"
+                    className="max-w-md w-full bg-card rounded-2xl shadow-xl p-8 border border-slate-100"
                 >
                     <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
                         <Lock className="w-8 h-8 text-purple-600" />
                     </div>
                     <h2 className="text-2xl font-bold text-center mb-2">Admin Access Verification</h2>
-                    <p className="text-center text-slate-500 mb-8">
+                    <p className="text-center text-muted-foreground mb-8">
                         Please enter your 6-digit 2FA code to continue.
                     </p>
 
@@ -316,16 +316,16 @@ export default function AdminPage() {
     // 2. Loading State
     if (loading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-slate-50">
+            <div className="flex min-h-screen items-center justify-center bg-muted">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-muted">
             {/* Header */}
-            <div className="bg-white border-b border-slate-200">
+            <div className="bg-card border-b border-border">
                 <div className="max-w-7xl mx-auto px-6 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -338,8 +338,8 @@ export default function AdminPage() {
                                 Back
                             </Button>
                             <div>
-                                <h1 className="text-2xl font-bold text-slate-900">Admin Panel</h1>
-                                <p className="text-sm text-slate-500">Manage users and system settings</p>
+                                <h1 className="text-2xl font-bold text-foreground">Admin Panel</h1>
+                                <p className="text-sm text-muted-foreground">Manage users and system settings</p>
                             </div>
                         </div>
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
@@ -350,7 +350,7 @@ export default function AdminPage() {
             </div>
 
             {/* Tabs */}
-            <div className="bg-white border-b border-slate-200">
+            <div className="bg-card border-b border-border">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="flex gap-6">
                         {[
@@ -363,7 +363,7 @@ export default function AdminPage() {
                                 onClick={() => setActiveTab(tab.id as any)}
                                 className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${activeTab === tab.id
                                     ? 'border-purple-600 text-purple-600'
-                                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                                    : 'border-transparent text-slate-600 hover:text-foreground'
                                     }`}
                             >
                                 <tab.icon className="w-4 h-4" />
@@ -399,36 +399,36 @@ export default function AdminPage() {
                             </div>
 
                             {/* Users Table */}
-                            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                            <div className="bg-card rounded-xl border border-border overflow-hidden">
                                 <table className="w-full">
-                                    <thead className="bg-slate-50 border-b border-slate-200">
+                                    <thead className="bg-muted border-b border-border">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                                                 User
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                                                 Role
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                                                 2FA
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                                                 Created
                                             </th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase">
                                                 Actions
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-200">
                                         {users.map((user) => (
-                                            <tr key={user.id} className="hover:bg-slate-50">
+                                            <tr key={user.id} className="hover:bg-muted">
                                                 <td className="px-6 py-4">
                                                     <div>
-                                                        <div className="font-medium text-slate-900">
+                                                        <div className="font-medium text-foreground">
                                                             {user.username}
                                                         </div>
-                                                        <div className="text-sm text-slate-500">{user.email}</div>
+                                                        <div className="text-sm text-muted-foreground">{user.email}</div>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
@@ -453,7 +453,7 @@ export default function AdminPage() {
                                                         <AlertCircle className="w-5 h-5 text-slate-300" />
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-slate-500">
+                                                <td className="px-6 py-4 text-sm text-muted-foreground">
                                                     {new Date(user.created_at).toLocaleDateString()}
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
@@ -506,7 +506,7 @@ export default function AdminPage() {
                             {/* Pagination Controls (Users) */}
                             {totalUsers > ITEMS_PER_PAGE && (
                                 <div className="flex items-center justify-between mt-4">
-                                    <div className="text-sm text-slate-500">
+                                    <div className="text-sm text-muted-foreground">
                                         Showing {((page - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(page * ITEMS_PER_PAGE, totalUsers)} of {totalUsers} users
                                     </div>
                                     <div className="flex gap-2">
@@ -542,29 +542,29 @@ export default function AdminPage() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
                         >
-                            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                            <div className="bg-card rounded-xl border border-border overflow-hidden">
                                 <table className="w-full">
-                                    <thead className="bg-slate-50 border-b border-slate-200">
+                                    <thead className="bg-muted border-b border-border">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                                                 Action
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                                                 Admin
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                                                 IP Address
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                                                 Time
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-200">
                                         {auditLogs.map((log) => (
-                                            <tr key={log.id} className="hover:bg-slate-50">
+                                            <tr key={log.id} className="hover:bg-muted">
                                                 <td className="px-6 py-4">
-                                                    <span className="font-medium text-slate-900">
+                                                    <span className="font-medium text-foreground">
                                                         {log.action.replace(/_/g, ' ').toUpperCase()}
                                                     </span>
                                                 </td>
@@ -574,7 +574,7 @@ export default function AdminPage() {
                                                 <td className="px-6 py-4 text-sm text-slate-600">
                                                     {log.ip_address}
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-slate-500">
+                                                <td className="px-6 py-4 text-sm text-muted-foreground">
                                                     {new Date(log.created_at).toLocaleString()}
                                                 </td>
                                             </tr>
@@ -586,7 +586,7 @@ export default function AdminPage() {
                             {/* Pagination Controls (Logs) */}
                             {totalLogs > ITEMS_PER_PAGE && (
                                 <div className="flex items-center justify-between mt-4">
-                                    <div className="text-sm text-slate-500">
+                                    <div className="text-sm text-muted-foreground">
                                         Showing {((page - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(page * ITEMS_PER_PAGE, totalLogs)} of {totalLogs} logs
                                     </div>
                                     <div className="flex gap-2">
@@ -623,7 +623,7 @@ export default function AdminPage() {
                             exit={{ opacity: 0, y: -20 }}
                             className="max-w-2xl mx-auto"
                         >
-                            <div className="bg-white rounded-xl border border-slate-200 p-8">
+                            <div className="bg-card rounded-xl border border-border p-8">
                                 <TwoFactorSetup onComplete={loadData} />
                             </div>
                         </motion.div>
@@ -637,7 +637,7 @@ export default function AdminPage() {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white rounded-xl p-6 max-w-md w-full mx-4"
+                        className="bg-card rounded-xl p-6 max-w-md w-full mx-4"
                     >
                         <h3 className="text-xl font-bold mb-4">Grant Admin Access</h3>
                         <p className="text-slate-600 mb-6">
@@ -697,7 +697,7 @@ export default function AdminPage() {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white rounded-xl p-6 max-w-md w-full mx-4"
+                        className="bg-card rounded-xl p-6 max-w-md w-full mx-4"
                     >
                         <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 mx-auto">
                             <Trash2 className="w-6 h-6 text-red-600" />

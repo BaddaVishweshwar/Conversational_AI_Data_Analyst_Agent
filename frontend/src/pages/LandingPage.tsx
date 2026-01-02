@@ -18,7 +18,7 @@ const LandingPage = () => {
     const headerBlur = useTransform(scrollY, [0, 100], ['blur(0px)', 'blur(8px)'])
 
     return (
-        <div className="min-h-screen bg-white text-slate-900 selection:bg-purple-100 scroll-smooth font-sans">
+        <div className="min-h-screen bg-card text-foreground selection:bg-purple-100 scroll-smooth font-sans">
             {/* Header */}
             <motion.header
                 style={{ backgroundColor: headerBg, backdropFilter: headerBlur }}
@@ -40,10 +40,10 @@ const LandingPage = () => {
                     </Link>
 
                     {/* Desktop Nav */}
-                    <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-500">
+                    <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
                         <motion.a
                             href="#features"
-                            className="hover:text-slate-900 transition-colors relative group"
+                            className="hover:text-foreground transition-colors relative group"
                             whileHover={{ y: -2 }}
                         >
                             Features
@@ -51,7 +51,7 @@ const LandingPage = () => {
                         </motion.a>
                         <motion.a
                             href="#testimonials"
-                            className="hover:text-slate-900 transition-colors relative group"
+                            className="hover:text-foreground transition-colors relative group"
                             whileHover={{ y: -2 }}
                         >
                             Testimonials
@@ -59,7 +59,7 @@ const LandingPage = () => {
                         </motion.a>
                         <motion.a
                             href="#pricing"
-                            className="hover:text-slate-900 transition-colors relative group"
+                            className="hover:text-foreground transition-colors relative group"
                             whileHover={{ y: -2 }}
                         >
                             Pricing
@@ -76,7 +76,7 @@ const LandingPage = () => {
                         ) : (
                             <div className="flex items-center gap-4">
                                 <motion.div whileHover={{ y: -2 }}>
-                                    <Link to="/login" className="hover:text-slate-900 transition-colors">Login</Link>
+                                    <Link to="/login" className="hover:text-foreground transition-colors">Login</Link>
                                 </motion.div>
                                 <Link to="/get-started">
                                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -91,7 +91,7 @@ const LandingPage = () => {
 
                     {/* Mobile Toggle */}
                     <motion.button
-                        className="md:hidden p-2 text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                        className="md:hidden p-2 text-foreground hover:bg-slate-100 rounded-lg transition-colors"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                         whileTap={{ scale: 0.9 }}
                     >
@@ -105,11 +105,11 @@ const LandingPage = () => {
                         initial={{ opacity: 0, y: -20, height: 0 }}
                         animate={{ opacity: 1, y: 0, height: 'auto' }}
                         exit={{ opacity: 0, y: -20, height: 0 }}
-                        className="md:hidden absolute top-20 left-0 right-0 glass border-b border-slate-200 p-6 flex flex-col gap-4 shadow-2xl"
+                        className="md:hidden absolute top-20 left-0 right-0 glass border-b border-border p-6 flex flex-col gap-4 shadow-2xl"
                     >
                         <motion.a
                             href="#features"
-                            className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors py-2"
+                            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
                             onClick={() => setIsMenuOpen(false)}
                             whileHover={{ x: 5 }}
                         >
@@ -117,7 +117,7 @@ const LandingPage = () => {
                         </motion.a>
                         <motion.a
                             href="#testimonials"
-                            className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors py-2"
+                            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
                             onClick={() => setIsMenuOpen(false)}
                             whileHover={{ x: 5 }}
                         >
@@ -125,14 +125,14 @@ const LandingPage = () => {
                         </motion.a>
                         <motion.a
                             href="#pricing"
-                            className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors py-2"
+                            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
                             onClick={() => setIsMenuOpen(false)}
                             whileHover={{ x: 5 }}
                         >
                             Pricing
                         </motion.a>
                         <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent my-2" />
-                        <Link to="/login" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
+                        <Link to="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
                             Login
                         </Link>
                         <Link to="/get-started" onClick={() => setIsMenuOpen(false)}>
@@ -163,7 +163,7 @@ const LandingPage = () => {
                 <div className="container mx-auto px-4">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
                         <div className="col-span-1 md:col-span-2">
-                            <div className="flex items-center gap-2 mb-6 text-slate-900">
+                            <div className="flex items-center gap-2 mb-6 text-foreground">
                                 <motion.div
                                     className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center"
                                     whileHover={{ scale: 1.1, rotate: 5 }}
@@ -172,20 +172,20 @@ const LandingPage = () => {
                                 </motion.div>
                                 <span className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">Antigravity</span>
                             </div>
-                            <p className="text-slate-500 max-w-sm mb-8 leading-relaxed">
+                            <p className="text-muted-foreground max-w-sm mb-8 leading-relaxed">
                                 Universal analytical intelligence for modern teams. Transform raw data into executive narratives in seconds.
                             </p>
                             <div className="flex gap-4">
                                 <motion.a
                                     href="#"
-                                    className="w-9 h-9 rounded-lg glass border border-slate-200 flex items-center justify-center hover:border-purple-300 transition-colors shadow-sm"
+                                    className="w-9 h-9 rounded-lg glass border border-border flex items-center justify-center hover:border-purple-300 transition-colors shadow-sm"
                                     whileHover={{ scale: 1.1, y: -2 }}
                                 >
                                     <svg className="w-4 h-4 text-slate-600" fill="currentColor" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" /></svg>
                                 </motion.a>
                                 <motion.a
                                     href="#"
-                                    className="w-9 h-9 rounded-lg glass border border-slate-200 flex items-center justify-center hover:border-blue-300 transition-colors shadow-sm"
+                                    className="w-9 h-9 rounded-lg glass border border-border flex items-center justify-center hover:border-blue-300 transition-colors shadow-sm"
                                     whileHover={{ scale: 1.1, y: -2 }}
                                 >
                                     <svg className="w-4 h-4 text-slate-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12c0-5.523-4.477-10-10-10z" /></svg>
@@ -193,8 +193,8 @@ const LandingPage = () => {
                             </div>
                         </div>
                         <div>
-                            <h4 className="font-bold mb-6 text-xs text-slate-900 border-b border-slate-200 pb-2">Platform</h4>
-                            <ul className="space-y-4 text-sm text-slate-500">
+                            <h4 className="font-bold mb-6 text-xs text-foreground border-b border-border pb-2">Platform</h4>
+                            <ul className="space-y-4 text-sm text-muted-foreground">
                                 <li>
                                     <motion.a
                                         href="#features"
@@ -234,8 +234,8 @@ const LandingPage = () => {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="font-bold mb-6 text-xs text-slate-900 border-b border-slate-200 pb-2">Resources</h4>
-                            <ul className="space-y-4 text-sm text-slate-500">
+                            <h4 className="font-bold mb-6 text-xs text-foreground border-b border-border pb-2">Resources</h4>
+                            <ul className="space-y-4 text-sm text-muted-foreground">
                                 <li>
                                     <motion.a
                                         href="#"
@@ -275,7 +275,7 @@ const LandingPage = () => {
                             </ul>
                         </div>
                     </div>
-                    <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-medium text-slate-400">
+                    <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-medium text-slate-400">
                         <span>© 2024 Antigravity AI. Independent Analysis.</span>
                         <div className="flex gap-8">
                             <span className="flex items-center gap-2">

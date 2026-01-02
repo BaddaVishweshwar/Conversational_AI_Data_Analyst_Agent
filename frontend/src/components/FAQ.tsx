@@ -25,22 +25,22 @@ const FAQ = () => {
     const [openIndex, setOpenIndex] = useState<number | null>(null);
 
     return (
-        <section className="py-32 bg-slate-50 border-t border-slate-100">
+        <section className="py-32 bg-muted border-t border-slate-100">
             <div className="container mx-auto px-4 max-w-4xl">
                 <div className="max-w-2xl mb-24">
-                    <h2 className="text-4xl font-bold text-slate-900 mb-6 tracking-tight">Common questions.</h2>
-                    <p className="text-xl text-slate-500 leading-relaxed">Everything you need to know about the platform and how we handle your analytical infrastructure.</p>
+                    <h2 className="text-4xl font-bold text-foreground mb-6 tracking-tight">Common questions.</h2>
+                    <p className="text-xl text-muted-foreground leading-relaxed">Everything you need to know about the platform and how we handle your analytical infrastructure.</p>
                 </div>
 
                 <div className="space-y-4">
                     {faqs.map((faq, index) => (
-                        <div key={index} className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm transition-all hover:border-slate-300">
+                        <div key={index} className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm transition-all hover:border-slate-300">
                             <button
                                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
                                 className="w-full p-8 flex items-center justify-between text-left transition-colors group"
                             >
-                                <span className={`text-lg font-bold transition-colors ${openIndex === index ? 'text-slate-900' : 'text-slate-600 group-hover:text-slate-900'}`}>{faq.question}</span>
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${openIndex === index ? 'bg-slate-900 text-white rotate-180' : 'bg-slate-50 text-slate-400'}`}>
+                                <span className={`text-lg font-bold transition-colors ${openIndex === index ? 'text-foreground' : 'text-slate-600 group-hover:text-foreground'}`}>{faq.question}</span>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${openIndex === index ? 'bg-slate-900 text-white rotate-180' : 'bg-muted text-slate-400'}`}>
                                     <ChevronDown className="w-4 h-4" />
                                 </div>
                             </button>
@@ -52,7 +52,7 @@ const FAQ = () => {
                                         exit={{ height: 0, opacity: 0 }}
                                         transition={{ duration: 0.3, ease: "easeInOut" }}
                                     >
-                                        <div className="p-8 pt-0 text-slate-500 leading-relaxed border-t border-slate-50">
+                                        <div className="p-8 pt-0 text-muted-foreground leading-relaxed border-t border-slate-50">
                                             {faq.answer}
                                         </div>
                                     </motion.div>

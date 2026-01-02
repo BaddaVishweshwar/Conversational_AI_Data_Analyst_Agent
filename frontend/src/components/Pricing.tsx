@@ -30,11 +30,11 @@ const Pricing = () => {
     ];
 
     return (
-        <section id="pricing" className="py-32 bg-slate-50 relative overflow-hidden">
+        <section id="pricing" className="py-32 bg-muted relative overflow-hidden">
             <div className="container mx-auto px-4 relative z-10">
                 <div className="max-w-3xl mb-24">
-                    <h2 className="text-4xl font-bold text-slate-900 mb-6 tracking-tight">Predictable pricing.</h2>
-                    <p className="text-xl text-slate-500 leading-relaxed">
+                    <h2 className="text-4xl font-bold text-foreground mb-6 tracking-tight">Predictable pricing.</h2>
+                    <p className="text-xl text-muted-foreground leading-relaxed">
                         Start for free, then scale as your analytical needs grow. No hidden platform fees or per-user taxes.
                     </p>
                 </div>
@@ -48,8 +48,8 @@ const Pricing = () => {
                             transition={{ delay: index * 0.1 }}
                             viewport={{ once: true }}
                             className={`relative p-8 rounded-2xl border ${plan.popular
-                                ? 'bg-white border-slate-900 shadow-2xl scale-105 z-10'
-                                : 'bg-white border-slate-200 shadow-sm'
+                                ? 'bg-card border-slate-900 shadow-2xl scale-105 z-10'
+                                : 'bg-card border-border shadow-sm'
                                 }`}
                         >
                             {plan.popular && (
@@ -59,12 +59,12 @@ const Pricing = () => {
                             )}
 
                             <div className="mb-8">
-                                <h3 className="text-2xl font-bold text-slate-900 mb-1">{plan.name}</h3>
+                                <h3 className="text-2xl font-bold text-foreground mb-1">{plan.name}</h3>
                                 <div className="flex items-baseline gap-1">
-                                    <span className="text-4xl font-bold text-slate-900">{plan.price !== "Custom" ? `$${plan.price}` : plan.price}</span>
+                                    <span className="text-4xl font-bold text-foreground">{plan.price !== "Custom" ? `$${plan.price}` : plan.price}</span>
                                     {plan.price !== "Custom" && <span className="text-slate-400 font-medium">/mo</span>}
                                 </div>
-                                <p className="text-slate-500 mt-4 text-sm font-medium leading-relaxed">{plan.description}</p>
+                                <p className="text-muted-foreground mt-4 text-sm font-medium leading-relaxed">{plan.description}</p>
                             </div>
 
                             <div className="space-y-4 mb-10">
@@ -78,7 +78,7 @@ const Pricing = () => {
 
                             <button className={`w-full py-4 rounded-xl font-bold transition-all h-14 ${plan.popular
                                 ? 'bg-slate-900 text-white hover:bg-black shadow-lg shadow-slate-200'
-                                : 'bg-slate-50 border border-slate-200 text-slate-900 hover:bg-slate-100'
+                                : 'bg-muted border border-border text-foreground hover:bg-slate-100'
                                 }`}>
                                 {plan.cta}
                             </button>

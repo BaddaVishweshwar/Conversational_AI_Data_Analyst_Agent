@@ -84,7 +84,7 @@ export default function Hero() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: isInView ? 1 : 0, y: isInView ? 0 : 10 }}
                         transition={{ duration: 0.5 }}
-                        className="inline-flex items-center rounded-full border border-slate-200 px-4 py-1.5 text-xs font-semibold bg-white/80 backdrop-blur-sm text-slate-600 shadow-lg shimmer"
+                        className="inline-flex items-center rounded-full border border-border px-4 py-1.5 text-xs font-semibold bg-card/80 backdrop-blur-sm text-slate-600 shadow-lg shimmer"
                     >
                         <Sparkles className="mr-2 h-3.5 w-3.5 text-purple-600" />
                         <span>Universal Analytical Intelligence</span>
@@ -96,7 +96,7 @@ export default function Hero() {
                         transition={{ duration: 0.6, delay: 0.1 }}
                         className="text-5xl md:text-8xl font-bold tracking-tight max-w-5xl leading-[1.1]"
                     >
-                        <span className="text-slate-900">Talk to your data. </span>
+                        <span className="text-foreground">Talk to your data. </span>
                         <br />
                         <span className="gradient-text">Get narratives.</span>
                     </motion.h1>
@@ -105,7 +105,7 @@ export default function Hero() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: isInView ? 1 : 0, y: isInView ? 0 : 20 }}
                         transition={{ duration: 0.6, delay: 0.2 }}
-                        className="text-lg md:text-xl text-slate-500 max-w-2xl leading-relaxed"
+                        className="text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed"
                     >
                         The AI analyst that lives in your workspace. Connect any dataset, ask a question in plain English, and get executive-ready reports in seconds.
                     </motion.p>
@@ -132,7 +132,7 @@ export default function Hero() {
                             <Button 
                                 variant="outline" 
                                 size="lg" 
-                                className="w-full sm:w-auto text-base h-14 px-10 rounded-xl glass hover:bg-white/90 transition-all font-semibold text-slate-600 border-slate-200 hover:border-purple-200 hover:shadow-lg"
+                                className="w-full sm:w-auto text-base h-14 px-10 rounded-xl glass hover:bg-card/90 transition-all font-semibold text-slate-600 border-border hover:border-purple-200 hover:shadow-lg"
                             >
                                 View Demo
                             </Button>
@@ -146,7 +146,7 @@ export default function Hero() {
                         transition={{ duration: 0.8, delay: 0.4 }}
                         className="relative w-full max-w-6xl mt-20 mx-auto"
                     >
-                        <div className="relative rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden aspect-[16/10] md:aspect-[21/10] flex flex-col group hover:shadow-purple-200/50 hover:border-purple-200 transition-all duration-500">
+                        <div className="relative rounded-2xl border border-border bg-card shadow-2xl overflow-hidden aspect-[16/10] md:aspect-[21/10] flex flex-col group hover:shadow-purple-200/50 hover:border-purple-200 transition-all duration-500">
                             {/* Window Header */}
                             <div className="h-10 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-purple-50/30 flex items-center px-4 gap-2">
                                 <div className="w-2.5 h-2.5 rounded-full bg-red-400 group-hover:bg-red-500 transition-colors" />
@@ -157,7 +157,7 @@ export default function Hero() {
                             <div className="flex-1 grid grid-cols-12 gap-px bg-slate-100">
                                 {/* Mock Sidebar */}
                                 <motion.div 
-                                    className="col-span-3 bg-white p-6 space-y-6"
+                                    className="col-span-3 bg-card p-6 space-y-6"
                                     whileHover={{ backgroundColor: 'rgba(248, 250, 252, 0.5)' }}
                                     transition={{ duration: 0.3 }}
                                 >
@@ -190,7 +190,7 @@ export default function Hero() {
                                 </motion.div>
 
                                 {/* Mock Content Area */}
-                                <div className="col-span-9 bg-white p-8 space-y-8">
+                                <div className="col-span-9 bg-card p-8 space-y-8">
                                     <div className="flex justify-between items-center">
                                         <motion.div 
                                             className="h-8 w-1/3 bg-gradient-to-r from-slate-50 to-purple-50 rounded-lg"
