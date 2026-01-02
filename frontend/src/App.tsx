@@ -12,6 +12,7 @@ import MainLayout from './components/MainLayout'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import ProtectedRoute from './components/ProtectedRoute'
 import GetStartedPage from './pages/GetStartedPage'
+import RegisterPage from './pages/RegisterPage'
 import HistoryPage from './pages/HistoryPage'
 
 const queryClient = new QueryClient({
@@ -31,7 +32,7 @@ function App() {
                     <Routes>
                         {/* Public Routes */}
                         <Route path="/login" element={<LoginPage />} />
-                        <Route path="/register" element={<GetStartedPage />} />
+                        <Route path="/register" element={<RegisterPage />} />
                         <Route path="/get-started" element={<GetStartedPage />} />
 
                         {/* Protected Routes (Wrapped in MainLayout and ProtectedRoute) */}
