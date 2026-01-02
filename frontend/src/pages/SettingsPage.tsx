@@ -1,12 +1,36 @@
-import { useAuthStore } from '../store/authStore';
-import { User, Mail, Shield, Bell, Database as DatabaseIcon } from 'lucide-react';
-import { useState } from 'react';
+import { User, Mail, Shield } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { api } from '../lib/api';
 
 export default function SettingsPage() {
-    const { user } = useAuthStore();
+    const [user, setUser] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('profile');
+
+    useEffect(() => {
+        loadUser();
+    }, []);
+
+    const loadUser = async () => {
+        try {
+            const response = await api.get('/auth/me');
+            setUser(response.data);
+        } catch (error) {
+            console.error('Error loading user:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="h-full flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="h-full overflow-y-auto bg-background">
