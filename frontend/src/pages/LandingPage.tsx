@@ -341,7 +341,7 @@ export default function LandingPage() {
                         ))}
                     </div>
                 </div>
-            </section> >
+            </section>
 
             {/* CTA Section */}
             < section className="py-32 relative overflow-hidden" >
