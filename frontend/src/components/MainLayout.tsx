@@ -9,10 +9,10 @@ import {
     LogOut,
     Database,
     User,
-    FolderOpen,
     Plus,
     RefreshCw,
-    Grid3x3
+    Grid3x3,
+    ChevronLeft
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { datasetsAPI } from '../lib/api';
@@ -37,6 +37,7 @@ export default function MainLayout() {
     const location = useLocation();
     const [datasets, setDatasets] = useState<any[]>([]);
     const [selectedDataset, setSelectedDataset] = useState<number | null>(null);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
     useEffect(() => {
         loadDatasets();
@@ -62,14 +63,9 @@ export default function MainLayout() {
     return (
         <div className="flex h-screen bg-background overflow-hidden">
             {/* Left Sidebar */}
-            <div className="w-64 border-r border-border bg-background flex flex-col">
-                {/* Sidebar Header */}
-                <div className="h-14 border-b border-border flex items-center px-4">
-                    <h1 className="text-lg font-semibold text-foreground">AI Analyst</h1>
-                </div>
-
+            <div className={`${sidebarCollapsed ? 'w-0' : 'w-48'} transition-all duration-300 border-r border-border bg-background flex flex-col overflow-hidden`}>
                 {/* Navigation */}
-                <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+                <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = location.pathname === item.path;
@@ -78,28 +74,49 @@ export default function MainLayout() {
                             <Link
                                 key={item.path}
                                 to={item.path}
-                                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm ${isActive
-                                    ? 'bg-accent/10 text-accent'
-                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                                className={`flex items-center gap-2.5 px-3 py-2 rounded-md transition-all text-sm ${isActive
+                                    ? 'bg-muted text-foreground'
+                                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                                     }`}
                             >
                                 <Icon className="w-4 h-4 shrink-0" />
-                                <span className="font-medium">{item.name}</span>
+                                <span>{item.name}</span>
                             </Link>
                         );
                     })}
 
                     {/* DATASETS Section */}
-                    <div className="pt-4">
-                        <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <div className="pt-6">
+                        <div className="px-3 pb-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider">
                             Datasets
                         </div>
-                        <div className="space-y-1">
-                            {datasets.map((dataset) => (
+                        <div className="space-y-0.5">
+                            <Link
+                                to="/datasets"
+                                className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
+                            >
+                                <Database className="w-4 h-4 shrink-0" />
+                                <span>Advertising.csv</span>
+                            </Link>
+                            <Link
+                                to="/datasets"
+                                className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
+                            >
+                                <Database className="w-4 h-4 shrink-0" />
+                                <span>Sales.csv</span>
+                            </Link>
+                            <Link
+                                to="/datasets"
+                                className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
+                            >
+                                <Database className="w-4 h-4 shrink-0" />
+                                <span>Customers.csv</span>
+                            </Link>
+                            {datasets.slice(3).map((dataset) => (
                                 <Link
                                     key={dataset.id}
-                                    to={`/datasets`}
-                                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                                    to="/datasets"
+                                    className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
                                 >
                                     <Database className="w-4 h-4 shrink-0" />
                                     <span className="truncate">{dataset.name}</span>
@@ -110,69 +127,75 @@ export default function MainLayout() {
                 </nav>
 
                 {/* Sidebar Footer */}
-                <div className="border-t border-border p-3 space-y-1">
+                <div className="border-t border-border p-2 space-y-0.5">
                     <Link
                         to="/settings"
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
                     >
                         <Settings className="w-4 h-4 shrink-0" />
-                        <span className="font-medium">Settings</span>
+                        <span>Settings</span>
                     </Link>
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
                     >
                         <LogOut className="w-4 h-4 shrink-0" />
-                        <span className="font-medium">Logout</span>
+                        <span>Logout</span>
                     </button>
                 </div>
             </div>
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0">
-                {/* Top Navbar with Dataset Tabs */}
-                <div className="h-14 border-b border-border flex items-center justify-between px-4 bg-background">
-                    {/* Dataset Tabs */}
-                    <div className="flex items-center gap-2 flex-1 overflow-x-auto">
-                        {datasets.slice(0, 3).map((dataset) => (
-                            <button
-                                key={dataset.id}
-                                onClick={() => setSelectedDataset(dataset.id)}
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all whitespace-nowrap ${selectedDataset === dataset.id
-                                    ? 'bg-accent/10 text-accent border border-accent/20'
-                                    : 'text-muted-foreground hover:bg-muted border border-transparent'
-                                    }`}
-                            >
-                                <Database className="w-3.5 h-3.5" />
-                                <span>{dataset.name}</span>
+                {/* Top Bar */}
+                <div className="h-12 border-b border-border flex items-center justify-between px-3 bg-background">
+                    {/* Left: AI Analyst + Collapse + Dataset Tabs */}
+                    <div className="flex items-center gap-2 flex-1">
+                        <button
+                            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                            className="p-1.5 hover:bg-muted rounded-md transition-colors"
+                        >
+                            <ChevronLeft className={`w-4 h-4 text-muted-foreground transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} />
+                        </button>
+                        <span className="text-sm font-semibold text-foreground px-2">AI Analyst</span>
+
+                        {/* Dataset Tabs */}
+                        <div className="flex items-center gap-1.5 ml-2">
+                            <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs bg-muted text-foreground border border-border">
+                                <Database className="w-3 h-3 text-accent" />
+                                Advertising.csv
                             </button>
-                        ))}
-                        <Link to="/datasets">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-muted-foreground hover:text-foreground"
-                            >
-                                <Plus className="w-4 h-4 mr-1" />
-                                Add Dataset
-                            </Button>
-                        </Link>
+                            <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-muted-foreground hover:bg-muted transition-colors">
+                                <Database className="w-3 h-3 text-orange-500" />
+                                Sales.csv
+                            </button>
+                            <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-muted-foreground hover:bg-muted transition-colors">
+                                <Database className="w-3 h-3 text-purple-500" />
+                                Customers.csv
+                            </button>
+                            <Link to="/datasets">
+                                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground">
+                                    <Plus className="w-3.5 h-3.5 mr-1" />
+                                    Add Dataset
+                                </Button>
+                            </Link>
+                        </div>
                     </div>
 
                     {/* Right Controls */}
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" className="p-2">
-                            <Settings className="w-4 h-4" />
+                    <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="sm" className="p-1.5 h-auto">
+                            <Settings className="w-4 h-4 text-muted-foreground" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="p-2">
-                            <RefreshCw className="w-4 h-4" />
+                        <Button variant="ghost" size="sm" className="p-1.5 h-auto">
+                            <RefreshCw className="w-4 h-4 text-muted-foreground" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="p-2">
-                            <Grid3x3 className="w-4 h-4" />
+                        <Button variant="ghost" size="sm" className="p-1.5 h-auto">
+                            <Grid3x3 className="w-4 h-4 text-muted-foreground" />
                         </Button>
                         <Link to="/settings">
-                            <button className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center">
-                                <User className="w-4 h-4 text-accent" />
+                            <button className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center ml-1">
+                                <User className="w-3.5 h-3.5 text-accent" />
                             </button>
                         </Link>
                     </div>
