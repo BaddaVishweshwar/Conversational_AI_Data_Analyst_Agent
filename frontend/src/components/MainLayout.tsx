@@ -42,20 +42,33 @@ export default function MainLayout({ children }: MainLayoutProps) {
     const navigate = useNavigate();
     const location = useLocation();
     const [datasets, setDatasets] = useState<any[]>([]);
+    const [activeDatasets, setActiveDatasets] = useState<number[]>(() => {
+        // Load from localStorage
+        const saved = localStorage.getItem('activeDatasets');
+        return saved ? JSON.parse(saved) : [];
+    });
     const [selectedDataset, setSelectedDataset] = useState<number | null>(null);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [showDatasetsModal, setShowDatasetsModal] = useState(false);
+
+    // Save activeDatasets to localStorage whenever it changes
+    useEffect(() => {
+        localStorage.setItem('activeDatasets', JSON.stringify(activeDatasets));
+    }, [activeDatasets]);
 
     useEffect(() => {
         loadDatasets();
     }, []);
 
-    // Read dataset from URL query parameter
+    // Read dataset from URL query parameter and add to active datasets
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const datasetId = params.get('dataset');
         if (datasetId) {
-            setSelectedDataset(Number(datasetId));
+            const id = Number(datasetId);
+            setSelectedDataset(id);
+            // Add to active datasets if not already there
+            setActiveDatasets(prev => prev.includes(id) ? prev : [...prev, id]);
         }
     }, [location.search]);
 
@@ -63,10 +76,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
         try {
             const response = await datasetsAPI.list();
             setDatasets(response.data);
-            // Only set default if no dataset in URL
+            // Only set default if no dataset in URL and no active datasets
             const params = new URLSearchParams(location.search);
             const datasetId = params.get('dataset');
-            if (response.data.length > 0 && !selectedDataset && !datasetId) {
+            if (response.data.length > 0 && !selectedDataset && !datasetId && activeDatasets.length === 0) {
                 setSelectedDataset(response.data[0].id);
             }
         } catch (error) {
@@ -80,16 +93,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
     };
 
     const handleDeleteDataset = async (datasetId: number) => {
-        if (confirm('Are you sure you want to delete this dataset?')) {
-            try {
-                await datasetsAPI.delete(datasetId);
-                await loadDatasets();
-                if (selectedDataset === datasetId) {
-                    setSelectedDataset(datasets.length > 1 ? datasets[0].id : null);
-                }
-            } catch (error) {
-                console.error('Error deleting dataset:', error);
-                alert('Failed to delete dataset');
+        // Remove from active analyzing session (don't delete the actual dataset)
+        setActiveDatasets(prev => prev.filter(id => id !== datasetId));
+
+        // If it was the selected dataset, select another active one
+        if (selectedDataset === datasetId) {
+            const remaining = activeDatasets.filter(id => id !== datasetId);
+            if (remaining.length > 0) {
+                setSelectedDataset(remaining[0]);
+                navigate(`/analytics?dataset=${remaining[0]}`);
+            } else {
+                setSelectedDataset(null);
+                navigate('/datasets');
             }
         }
     };
@@ -155,7 +170,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
                         {/* Dataset Tabs */}
                         <div className="flex items-center gap-1.5 ml-2">
-                            {datasets.slice(0, 3).map((dataset, idx) => {
+                            {datasets.filter(d => activeDatasets.includes(d.id)).slice(0, 3).map((dataset, idx) => {
                                 const colors = ['text-accent', 'text-orange-500', 'text-purple-500'];
                                 const isSelected = selectedDataset === dataset.id;
                                 return (
