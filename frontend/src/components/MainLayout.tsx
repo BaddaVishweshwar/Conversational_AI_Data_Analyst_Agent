@@ -56,6 +56,25 @@ export default function MainLayout({ children }: MainLayoutProps) {
         localStorage.setItem('activeDatasets', JSON.stringify(activeDatasets));
     }, [activeDatasets]);
 
+    // Listen for storage changes (when datasets are added from other components)
+    useEffect(() => {
+        const handleStorageChange = () => {
+            const saved = localStorage.getItem('activeDatasets');
+            if (saved) {
+                setActiveDatasets(JSON.parse(saved));
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        // Also listen for custom event from same window
+        window.addEventListener('activeDatasets-changed', handleStorageChange);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('activeDatasets-changed', handleStorageChange);
+        };
+    }, []);
+
     useEffect(() => {
         loadDatasets();
     }, []);
