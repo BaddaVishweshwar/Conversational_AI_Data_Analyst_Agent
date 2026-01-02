@@ -3,7 +3,10 @@ import duckdb
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 import json
+import logging
 from ..config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class DataService:
@@ -11,22 +14,31 @@ class DataService:
     
     @staticmethod
     def parse_file(file_path: str, file_type: str) -> pd.DataFrame:
-        """Parse uploaded file into DataFrame"""
+        """
+        Parse a file into a pandas DataFrame
+        """
         try:
-            if file_type == "csv":
+            if file_type == 'csv':
                 df = pd.read_csv(file_path)
-            elif file_type in ["xlsx", "xls"]:
+            elif file_type == 'xlsx':
                 df = pd.read_excel(file_path)
-            elif file_type == "sas7bdat":
-                df = pd.read_sas(file_path)
-            elif file_type == "parquet":
+            elif file_type == 'json':
+                df = pd.read_json(file_path)
+            elif file_type == 'parquet':
                 df = pd.read_parquet(file_path)
             else:
                 raise ValueError(f"Unsupported file type: {file_type}")
             
+            # Clean up Unnamed columns (often index artifacts)
+            df = df.loc[:, ~df.columns.str.contains('^Unnamed:', case=False)]
+            
+            # Sanitize column names (replace spaces/special chars if needed, but keeping original for now)
+            # useful for SQL: df.columns = df.columns.str.replace(' ', '_').str.replace(r'[^a-zA-Z0-9_]', '', regex=True)
+            
             return df
         except Exception as e:
-            raise Exception(f"Error parsing file: {str(e)}")
+            logger.error(f"Error parsing file: {str(e)}")
+            raise # Re-raise the exception after logging
     
     @staticmethod
     def get_schema(df: pd.DataFrame) -> Dict[str, str]:

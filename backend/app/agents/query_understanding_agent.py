@@ -66,27 +66,26 @@ TASK: Extract what the user wants to do with the data.
 
 OUTPUT FORMAT (JSON):
 {{
-    "required_columns": ["col1", "col2"],  // Columns needed for analysis
-    "filters": [  // Filtering conditions
-        {{"column": "region", "operator": "=", "value": "North"}}
+    "required_columns": ["Actual_Column_1", "Actual_Column_2"],
+    "filters": [
+        {{"column": "Actual_Column_1", "operator": "=", "value": "Value"}}
     ],
-    "aggregations": ["SUM(sales)", "AVG(price)"],  // Aggregation functions
-    "groupby_columns": ["region", "product"],  // Group by dimensions
-    "time_range": {{"start": "2024-01-01", "end": "2024-12-31"}},  // Optional
-    "sort_by": "total_sales DESC",  // Optional
-    "limit": 10,  // Optional
-    "validation_errors": []  // List any column names not in schema
+    "aggregations": ["SUM(Actual_Column_2)", "AVG(Actual_Column_3)"], 
+    "groupby_columns": ["Actual_Category_Column"],
+    "time_range": {{"start": "2024-01-01", "end": "2024-12-31"}},
+    "sort_by": "Actual_Column_2 DESC",
+    "limit": 10,
+    "validation_errors": []
 }}
 
 RULES:
-1. ONLY use columns from the available columns list
-2. If a column is mentioned but doesn't exist, add to validation_errors
-3. Infer aggregations from words like "total", "average", "count", "sum"
-4. Infer grouping from "by region", "per product", etc.
-5. For TREND intent, include time dimension in groupby
-6. For COMPARATIVE intent, include comparison dimension in groupby
+1. **CRITICAL**: ONLY use columns from the AVAILABLE COLUMNS list above. 
+2. **NO HALLUCINATIONS**: Do NOT use 'category_col', 'region', or 'product' unless they are in the list.
+3. **GROUPING**: If NO categorical columns exist in the list, leave "groupby_columns" EMPTY ([]). Do NOT invent a grouping column.
+4. **AGGREGATION**: If no grouping possible, just request global aggregations (SUM, AVG).
+5. Infer aggregations: "total"->SUM, "average"->AVG.
 
-Respond with ONLY the JSON, no other text."""
+Respond with ONLY the JSON."""
 
         try:
             response = self.client.generate(

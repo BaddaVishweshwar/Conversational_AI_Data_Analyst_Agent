@@ -7,13 +7,16 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-    const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const isLoading = useAuthStore((state) => state.isLoading);
+    const checkAuth = useAuthStore((state) => state.checkAuth);
     const location = useLocation();
 
     useEffect(() => {
         // Initial check on mount
         checkAuth();
-    }, [checkAuth]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     if (isLoading) {
         return (

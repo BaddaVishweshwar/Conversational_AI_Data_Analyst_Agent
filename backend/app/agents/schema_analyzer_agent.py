@@ -100,6 +100,38 @@ class SchemaAnalyzerAgent:
         is_aggregatable = col_type == ColumnType.NUMERIC
         is_groupable = col_type in [ColumnType.CATEGORICAL, ColumnType.DATETIME, ColumnType.BOOLEAN]
         
+        # Calculate stats based on type
+        min_val, max_val, avg_val, std_val = None, None, None, None
+        
+        if col_type == ColumnType.NUMERIC:
+            try:
+                # Ensure we strictly operate on numeric data (exclude NaNs properly)
+                clean_series = series.dropna()
+                if not clean_series.empty:
+                    min_val = float(clean_series.min())
+                    max_val = float(clean_series.max())
+                    avg_val = float(clean_series.mean())
+                    std_val = float(clean_series.std())
+            except Exception as e:
+                logger.warning(f"Failed to calc numeric stats for {col}: {e}")
+        
+        elif col_type == ColumnType.DATETIME:
+            try:
+                clean_series = series.dropna()
+                if not clean_series.empty:
+                    # Convert to datetime if not already (safeguard)
+                    if not pd.api.types.is_datetime64_any_dtype(clean_series):
+                         clean_series = pd.to_datetime(clean_series, errors='coerce').dropna()
+                    
+                    if not clean_series.empty:
+                        min_val = clean_series.min()
+                        max_val = clean_series.max()
+                        # Convert to string for JSON serialization
+                        min_val = min_val.isoformat() if hasattr(min_val, 'isoformat') else str(min_val)
+                        max_val = max_val.isoformat() if hasattr(max_val, 'isoformat') else str(max_val)
+            except Exception as e:
+                logger.warning(f"Failed to calc datetime stats for {col}: {e}")
+
         return ColumnMetadata(
             name=col,
             type=col_type,
@@ -107,7 +139,11 @@ class SchemaAnalyzerAgent:
             unique_count=unique_count,
             sample_values=sample_values,
             is_aggregatable=is_aggregatable,
-            is_groupable=is_groupable
+            is_groupable=is_groupable,
+            min_value=min_val,
+            max_value=max_val,
+            avg_value=avg_val,
+            std_dev=std_val
         )
     
     @staticmethod

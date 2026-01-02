@@ -23,14 +23,33 @@ interface ConversationMessageV2Props {
         generated_sql?: string;
         result_data?: any[];
         columns?: string[];
+        // Supporting both legacy single object and new list
         visualization?: {
             chart_type: string;
             x_axis?: string;
             y_axis?: string[];
             title?: string;
+            description?: string;
         };
-        intent?: string;
-        confidence?: number;
+        visualizations?: {
+            chart_type: string;
+            x_axis?: string;
+            y_axis?: string[];
+            title?: string;
+            description?: string;
+        }[];
+        intent?: {
+            intent: string;
+            confidence: number;
+        };
+        interpretation?: {
+            title: string;
+            main_finding: string;
+            outliers: string[];
+            trends: string[];
+            top_contributors: string[];
+            correlations: string[];
+        };
         insights?: {
             direct_answer: string;
             what_data_shows: string[];
@@ -39,7 +58,7 @@ interface ConversationMessageV2Props {
             confidence: number;
         };
     };
-    processingSteps?: ProcessingStep[];
+    processingSteps?: (ProcessingStep | string)[];
     timestamp?: string;
 }
 
@@ -58,13 +77,15 @@ export default function ConversationMessageV2({
 
     const isUser = role === 'user';
     const hasInsights = queryData?.insights;
-    const hasViz = queryData?.visualization && queryData.visualization.chart_type !== 'table';
+    // Determine which visualizations to use
+    const activeVisualizations = queryData?.visualizations || (queryData?.visualization ? [queryData.visualization] : []);
+    const hasViz = activeVisualizations.length > 0 && activeVisualizations[0].chart_type !== 'table';
 
     // Helper to render specific charts
-    const renderChart = () => {
-        if (!queryData?.visualization || !queryData.result_data) return null;
+    const renderChart = (vizConfig: any) => {
+        if (!vizConfig || !queryData?.result_data) return null;
 
-        const { chart_type, x_axis, y_axis } = queryData.visualization;
+        const { chart_type, x_axis, y_axis } = vizConfig;
         const data = queryData.result_data;
 
         // Common tooltip style
@@ -97,7 +118,7 @@ export default function ConversationMessageV2({
                             <YAxis tick={{ fontSize: 12 }} />
                             <RechartsTooltip content={<CustomTooltip />} />
                             <Legend />
-                            {y_axis?.map((key, index) => (
+                            {y_axis?.map((key: string, index: number) => (
                                 <Bar
                                     key={key}
                                     dataKey={key}
@@ -117,7 +138,7 @@ export default function ConversationMessageV2({
                             <YAxis tick={{ fontSize: 12 }} />
                             <RechartsTooltip content={<CustomTooltip />} />
                             <Legend />
-                            {y_axis?.map((key, index) => (
+                            {y_axis?.map((key: string, index: number) => (
                                 <Line
                                     key={key}
                                     type="monotone"
@@ -139,18 +160,57 @@ export default function ConversationMessageV2({
                                 cx="50%"
                                 cy="50%"
                                 labelLine={false}
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
                                 outerRadius={100}
                                 fill="#8884d8"
                                 dataKey={y_axis?.[0] || 'value'}
                             >
-                                {data.map((_entry, index) => (
+                                {data.map((_entry: any, index: number) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                 ))}
                             </Pie>
                             <RechartsTooltip />
                         </RePieChart>
                     </ResponsiveContainer>
+                );
+            case 'histogram':
+                return (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={data} barCategoryGap={0}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey={x_axis} tick={{ fontSize: 12 }} />
+                            <YAxis tick={{ fontSize: 12 }} />
+                            <RechartsTooltip content={<CustomTooltip />} />
+                            <Legend />
+                            <Bar dataKey={y_axis?.[0] || 'frequency'} fill="#8884d8" name="Frequency" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                );
+            case 'scatter':
+                return (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={data}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey={x_axis} />
+                            <YAxis />
+                            <RechartsTooltip cursor={{ strokeDasharray: '3 3' }} />
+                            <Legend />
+                            {y_axis?.map((key: string, index: number) => (
+                                <Bar key={key} dataKey={key} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </BarChart>
+                    </ResponsiveContainer>
+                );
+            case 'kpi':
+            case 'metric_card':
+                // Render a simple card for metric/KPI
+                const kpiKey = y_axis?.[0] || 'value';
+                const kpiValue = data[0]?.[kpiKey];
+                return (
+                    <div className="flex flex-col items-center justify-center h-full border border-slate-100 rounded-lg p-6 bg-slate-50">
+                        <div className="text-4xl font-bold text-slate-800">{typeof kpiValue === 'number' ? kpiValue.toLocaleString() : kpiValue}</div>
+                        <div className="text-sm text-slate-500 mt-2">{vizConfig.title}</div>
+                    </div>
                 );
             default:
                 return null;
@@ -207,14 +267,49 @@ export default function ConversationMessageV2({
                     {hasInsights && (
                         <div className="p-6 space-y-8">
 
-                            {/* Visualization */}
+                            {/* Statistical Analysis (New Layer) */}
+                            {queryData.interpretation && (
+                                <div className="bg-blue-50/30 rounded-xl p-4 border border-blue-100/50">
+                                    <h4 className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                        <TrendingUp className="w-4 h-4" />
+                                        Statistical Findings
+                                    </h4>
+                                    <div className="space-y-2">
+                                        <p className="text-sm font-medium text-slate-800">
+                                            {queryData.interpretation.main_finding}
+                                        </p>
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {queryData.interpretation.outliers.map((o, i) => (
+                                                <span key={i} className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-md border border-red-200">
+                                                    {o}
+                                                </span>
+                                            ))}
+                                            {queryData.interpretation.trends.map((t, i) => (
+                                                <span key={i} className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-md border border-green-200">
+                                                    {t}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Visualization Grid (Multi-Chart) */}
                             {hasViz && (
-                                <div className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm">
-                                    <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <div className="space-y-4">
+                                    <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
                                         <TrendingUp className="w-4 h-4" />
                                         Visual Analysis
                                     </h4>
-                                    {renderChart()}
+                                    <div className={`grid gap-4 ${activeVisualizations.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+                                        {activeVisualizations.map((viz, idx) => (
+                                            <div key={idx} className={`bg-white border border-slate-100 rounded-xl p-4 shadow-sm ${viz.chart_type === 'kpi' ? 'md:col-span-1' : 'md:col-span-2'}`}>
+                                                {viz.title && <h5 className="text-sm font-medium text-slate-700 mb-2">{viz.title}</h5>}
+                                                {viz.description && <p className="text-xs text-slate-500 mb-4">{viz.description}</p>}
+                                                {renderChart(viz)}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
 
@@ -316,18 +411,24 @@ export default function ConversationMessageV2({
                         >
                             <div className="bg-slate-900 rounded-xl p-4 space-y-3">
                                 <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Processing Steps</h4>
-                                {processingSteps.map((step, index) => (
-                                    <div key={index} className="flex items-center gap-3 text-xs text-slate-300">
-                                        {step.status === 'complete' ? (
-                                            <CheckCircle className="w-3 h-3 text-green-400 flex-shrink-0" />
-                                        ) : step.status === 'error' ? (
-                                            <div className="w-3 h-3 rounded-full bg-red-400 flex-shrink-0" />
-                                        ) : (
-                                            <Loader2 className="w-3 h-3 animate-spin text-blue-400 flex-shrink-0" />
-                                        )}
-                                        <span>{step.message}</span>
-                                    </div>
-                                ))}
+                                {processingSteps.map((step, index) => {
+                                    const isString = typeof step === 'string';
+                                    const message = isString ? step : step.message;
+                                    const status = isString ? 'complete' : step.status;
+
+                                    return (
+                                        <div key={index} className="flex items-center gap-3 text-xs text-slate-300">
+                                            {status === 'complete' ? (
+                                                <CheckCircle className="w-3 h-3 text-green-400 flex-shrink-0" />
+                                            ) : status === 'error' ? (
+                                                <div className="w-3 h-3 rounded-full bg-red-400 flex-shrink-0" />
+                                            ) : (
+                                                <Loader2 className="w-3 h-3 animate-spin text-blue-400 flex-shrink-0" />
+                                            )}
+                                            <span>{message}</span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </motion.div>
                     )}

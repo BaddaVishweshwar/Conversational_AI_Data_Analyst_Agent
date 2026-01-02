@@ -14,6 +14,8 @@ class IntentType(str, Enum):
     TREND = "TREND"              # Over time
     PREDICTIVE = "PREDICTIVE"    # Forecast
     PRESCRIPTIVE = "PRESCRIPTIVE" # Recommendations
+    DISTRIBUTION = "DISTRIBUTION" # Spread/Frequency
+    CORRELATION = "CORRELATION"  # Relationship
 
 
 class ColumnType(str, Enum):
@@ -56,6 +58,13 @@ class ColumnMetadata(BaseModel):
     sample_values: List[Any] = Field(default_factory=list)
     is_aggregatable: bool = False
     is_groupable: bool = False
+    
+    # Enhanced Profiling Stats (Optional as they might not apply to all types)
+    min_value: Optional[Any] = None
+    max_value: Optional[Any] = None
+    avg_value: Optional[float] = None
+    std_dev: Optional[float] = None
+
 
 
 class SchemaAnalysis(BaseModel):
@@ -94,6 +103,7 @@ class AnalysisPlan(BaseModel):
     """Result from Analysis Planner Agent"""
     steps: List[AnalysisPlanStep]
     sql_query: str
+    supporting_queries: List[Dict[str, str]] = Field(default_factory=list) # List of {name: str, query: str}
     python_code: Optional[str] = None
     expected_columns: List[str]
     validation_passed: bool = True
@@ -118,6 +128,7 @@ class VizConfig(BaseModel):
     x_axis: Optional[str] = None
     y_axis: Optional[List[str]] = None
     title: str = ""
+    description: Optional[str] = None # Added description for the chart
     validation_passed: bool = True
     rejection_reason: Optional[str] = None
 
@@ -132,14 +143,30 @@ class Insights(BaseModel):
     data_sufficiency: Literal["sufficient", "partial", "insufficient"] = "sufficient"
 
 
+
+class InterpretationResult(BaseModel):
+    """Structured interpretation of data findings (Pre-LLM)"""
+    title: str
+    main_finding: str
+    outliers: List[str] = Field(default_factory=list)
+    trends: List[str] = Field(default_factory=list)
+    top_contributors: List[str] = Field(default_factory=list)
+    correlations: List[str] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
+
+
 class AnalysisResponse(BaseModel):
-    """Complete response from analytics pipeline"""
+    """
+    Final wrapper for all agents' outputs.
+    This is what the wrapper service returns to the API.
+    """
     intent: IntentResult
     schema_analysis: Optional[SchemaAnalysis] = None
     query_requirements: QueryRequirements
     analysis_plan: AnalysisPlan
     execution_result: ExecutionResult
-    visualization: VizConfig
+    interpretation: Optional[InterpretationResult] = None
+    visualization: Optional[List[VizConfig]] = None # Changed to List
     insights: Insights
-    reasoning_steps: List[str] = Field(default_factory=list)
+    reasoning_steps: List[str]
     total_time_ms: int = 0

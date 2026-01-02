@@ -67,6 +67,18 @@ class ConversationDetailResponse(BaseModel):
     messages: List[MessageResponse]
 
 
+def clean_interpretation(interpretation):
+    if not interpretation:
+        return None
+    # Pydantic v2 use model_dump(), v1 use dict()
+    # Assuming v1 or v2 compatibility, try dict() first or basic getattr
+    try:
+        if hasattr(interpretation, 'model_dump'):
+            return interpretation.model_dump()
+        return interpretation.dict()
+    except:
+        return None
+
 @router.post("", response_model=ConversationResponse, status_code=status.HTTP_201_CREATED)
 async def create_conversation(
     request: ConversationCreate,
@@ -266,15 +278,25 @@ async def send_message(
         
         # Check if analysis succeeded
         if not analysis_response.execution_result.success:
+            # Add error step
+            processing_steps.append({
+                "status": "error",
+                "message": f"Analysis failed: {analysis_response.execution_result.error}",
+                "data": {"error": analysis_response.execution_result.error}
+            })
+            
             # Error response
             error_message = conversation_service.add_message(
                 db=db,
                 conversation_id=conversation_id,
                 role='assistant',
-                content=f"I encountered an error: {analysis_response.execution_result.error}",
+                content=f"I encountered an error: {analysis_response.execution_result.error}\n\nI tried to self-correct but couldn't resolve the issue.",
                 query_data={
                     "error": analysis_response.execution_result.error,
-                    "generated_sql": analysis_response.analysis_plan.sql_query
+                    "generated_sql": analysis_response.analysis_plan.sql_query,
+                    # Fallback for visualization to prevent UI crashes if it expects something
+                    "visualizations": [],
+                    "visualization": None
                 },
                 processing_steps=processing_steps
             )
@@ -306,33 +328,64 @@ async def send_message(
         })
         
         # Prepare query data for storage
+        visualizations_data = []
+        if analysis_response.visualization:
+            # Handle list vs single object (just in case of mixed usage during migration)
+            viz_list = analysis_response.visualization if isinstance(analysis_response.visualization, list) else [analysis_response.visualization]
+            for viz in viz_list:
+                visualizations_data.append({
+                    "chart_type": viz.chart_type.value,
+                    "x_axis": viz.x_axis,
+                    "y_axis": viz.y_axis,
+                    "title": viz.title,
+                    "description": viz.description
+                })
+
         query_data = {
             "generated_sql": analysis_response.analysis_plan.sql_query,
             "result_data": analysis_response.execution_result.data,
             "columns": analysis_response.execution_result.columns,
-            "visualization": {
-                "type": analysis_response.visualization.chart_type.value,
-                "x_axis": analysis_response.visualization.x_axis,
-                "y_axis": analysis_response.visualization.y_axis
+            "visualizations": visualizations_data, # New Plural Field
+            # Keep legacy single field for backward compat if needed, or just let frontend handle new field
+            "visualization": visualizations_data[0] if visualizations_data else None, 
+            "intent": {
+                "intent": analysis_response.intent.intent.value,
+                "confidence": analysis_response.intent.confidence
             },
-            "intent": analysis_response.intent.intent.value,
-            "confidence": analysis_response.intent.confidence,
+            "interpretation": clean_interpretation(analysis_response.interpretation),
             "insights": {
                 "direct_answer": analysis_response.insights.direct_answer,
                 "what_data_shows": analysis_response.insights.what_data_shows,
                 "why_it_happened": analysis_response.insights.why_it_happened,
-                "business_implications": analysis_response.insights.business_implications
+                "business_implications": analysis_response.insights.business_implications,
+                "confidence": analysis_response.insights.confidence
             }
         }
+        
+        # Merge high-level steps with granular reasoning steps
+        # We start with basic buckets, but we can also just append the granular string steps
+        # The frontend now accepts strings in processing_steps.
+        final_steps = processing_steps.copy()
+        if analysis_response.reasoning_steps:
+             for step in analysis_response.reasoning_steps:
+                 if isinstance(step, str):
+                     final_steps.append({
+                         "status": "reasoning",
+                         "message": step,
+                         "data": None
+                     })
+                 else:
+                     # Already a dict (unlikely based on error, but safe)
+                     final_steps.append(step)
         
         # Add assistant message
         assistant_message = conversation_service.add_message(
             db=db,
             conversation_id=conversation_id,
             role='assistant',
-            content=natural_response,
+            content=analysis_response.insights.direct_answer, # Use direct answer as main content
             query_data=query_data,
-            processing_steps=processing_steps
+            processing_steps=final_steps
         )
         
         return MessageResponse.from_orm(assistant_message)

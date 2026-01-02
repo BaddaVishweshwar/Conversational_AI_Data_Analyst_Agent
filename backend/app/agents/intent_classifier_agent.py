@@ -58,6 +58,8 @@ INTENT CATEGORIES:
 4. TREND - Shows change over time (e.g., "trend", "over time", "growth", "monthly")
 5. PREDICTIVE - Forecasts future (e.g., "predict", "forecast", "next month")
 6. PRESCRIPTIVE - Recommends actions (e.g., "what should we do", "recommend", "suggest")
+7. DISTRIBUTION - Shows spread/frequency (e.g., "distribution of ages", "histogram", "frequency")
+8. CORRELATION - Shows relationship (e.g., "relationship between price and sales", "correlation", "scatter")
 
 CLASSIFICATION RULES:
 - If query mentions "trend", "over time", "monthly", "growth" → TREND
@@ -65,11 +67,13 @@ CLASSIFICATION RULES:
 - If query has "vs", "compare", "difference" → COMPARATIVE
 - If query asks "predict", "forecast" → PREDICTIVE
 - If query asks "recommend", "should", "suggest" → PRESCRIPTIVE
+- If query asks "distribution", "spread", "histogram", "frequency" → DISTRIBUTION
+- If query asks "relationship", "correlation", "related to" → CORRELATION
 - Otherwise → DESCRIPTIVE
 
 OUTPUT FORMAT (JSON):
 {{
-    "intent": "DESCRIPTIVE|DIAGNOSTIC|COMPARATIVE|TREND|PREDICTIVE|PRESCRIPTIVE",
+    "intent": "DESCRIPTIVE|DIAGNOSTIC|COMPARATIVE|TREND|PREDICTIVE|PRESCRIPTIVE|DISTRIBUTION|CORRELATION",
     "confidence": 0.0-1.0,
     "required_operations": ["operation1", "operation2"],
     "time_dimension_required": true/false,
@@ -140,6 +144,12 @@ Respond with ONLY the JSON, no other text."""
             time_required = True
         elif any(word in query_lower for word in ['recommend', 'should', 'suggest', 'advice']):
             intent = IntentType.PRESCRIPTIVE
+            time_required = False
+        elif any(word in query_lower for word in ['distribution', 'spread', 'histogram', 'frequency']):
+            intent = IntentType.DISTRIBUTION
+            time_required = False
+        elif any(word in query_lower for word in ['relationship', 'correlation', 'associate', 'scatter']):
+            intent = IntentType.CORRELATION
             time_required = False
         else:
             intent = IntentType.DESCRIPTIVE

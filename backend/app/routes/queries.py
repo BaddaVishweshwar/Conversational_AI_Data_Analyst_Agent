@@ -184,12 +184,38 @@ async def ask_question(
         else:
             df = data_service.parse_file(dataset.file_path, dataset.file_type)
         
+        # Prepare conversation context for multi-turn understanding
+        context = {}
+        if query_request.session_id:
+            # Fetch recent history for this session
+            history_queries = db.query(Query).filter(
+                Query.session_id == query_request.session_id,
+                Query.user_id == current_user.id,
+                Query.status == 'success'
+            ).order_by(Query.created_at.desc()).limit(5).all()
+            
+            # Convert to chronological order
+            history_queries.reverse()
+            
+            messages = []
+            for hq in history_queries:
+                messages.append({"role": "user", "content": hq.natural_language_query})
+                # Use insights as assistant response (or failing that, SQL summary)
+                assistant_content = hq.insights if hq.insights else f"Executed SQL: {hq.generated_sql}"
+                messages.append({"role": "assistant", "content": assistant_content})
+                
+            context = {
+                "history": messages,
+                "dataset_id": dataset.id
+            }
+            
         # Execute multi-agent analytics pipeline
         analysis_response = analytics_service_v2.analyze(
             query=query_request.query,
             dataset=dataset,
             df=df,
-            connection=connection
+            connection=connection,
+            context=context
         )
         
         # Check if analysis succeeded

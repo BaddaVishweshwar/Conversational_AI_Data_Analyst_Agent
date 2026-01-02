@@ -9,7 +9,7 @@ import json
 import re
 import logging
 from ..config import settings
-from . import Insights, ExecutionResult, IntentResult
+from . import Insights, ExecutionResult, IntentResult, InterpretationResult
 
 logger = logging.getLogger(__name__)
 
@@ -37,15 +37,19 @@ class InsightGeneratorAgent:
         self,
         query: str,
         execution_result: ExecutionResult,
-        intent: IntentResult
+        intent: IntentResult,
+        interpretation: InterpretationResult,
+        conversation_history: List[Dict[str, str]] = []
     ) -> Insights:
         """
-        Generate structured insights
+        Generate structured insights with statistical grounding
         
         Args:
             query: Natural language query
             execution_result: Execution results with data and metrics
             intent: Query intent
+            interpretation: Statistical interpretation findings
+            conversation_history: Recent conversation history
             
         Returns:
             Insights with 4-section structure
@@ -68,14 +72,39 @@ class InsightGeneratorAgent:
         # Extract all metrics from execution result
         metrics_summary = self._extract_metrics(execution_result)
         
+
+        # Format intermediate results
+        supporting_context = ""
+        if execution_result.intermediate_results:
+            supporting_context = "CONTEXT FROM SUPPORTING QUERIES:\n"
+            for name, data in execution_result.intermediate_results.items():
+                supporting_context += f"- {name}: {json.dumps(data[:3], default=str)}\n"
+
+        # Format history
+        history_str = ""
+        if conversation_history:
+            history_str = "PREVIOUS CONVERSATION (Use for comparison context):\n"
+            for msg in conversation_history[-3:]: 
+                history_str += f"- {msg['role'].upper()}: {msg['content']}\n"
+        
         prompt = f"""You are an Expert Senior Business Analyst & Strategy Consultant (ex-McKinsey/Bain). 
 Your goal is to provide executive-level insights that answer the user's business question directly, backed by data.
 
 USER QUERY: "{query}"
 INTENT: {intent.intent.value}
 
+{history_str}
+
+STATISTICAL FINDINGS (Use these to drive 'Why' and 'Implications'):
+- Main Finding: {interpretation.main_finding}
+- Outliers: {", ".join(interpretation.outliers)}
+- Top Contributors: {", ".join(interpretation.top_contributors)}
+- Trends: {", ".join(interpretation.trends) if interpretation.trends else "None detected"}
+
 DATA RESULTS (first 10 rows):
 {json.dumps(limited_data, indent=2, default=str)}
+
+ {supporting_context}
 
 COMPUTED METRICS:
 {json.dumps(metrics_summary, indent=2, default=str)}

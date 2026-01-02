@@ -35,7 +35,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         localStorage.setItem('refresh_token', refresh_token);
 
         const userResponse = await authAPI.getMe();
-        set({ user: userResponse.data, isAuthenticated: true });
+        set({ user: userResponse.data, isAuthenticated: true, isLoading: false });
     },
 
     googleLogin: async (idToken: string) => {
