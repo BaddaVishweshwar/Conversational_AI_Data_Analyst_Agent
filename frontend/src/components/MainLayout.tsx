@@ -24,6 +24,10 @@ interface NavItem {
     path: string;
 }
 
+interface MainLayoutProps {
+    children?: React.ReactNode;
+}
+
 const navItems: NavItem[] = [
     { name: 'Chat', icon: MessageSquare, path: '/analytics' },
     { name: 'Dashboards', icon: LayoutDashboard, path: '/dashboard' },
@@ -31,7 +35,7 @@ const navItems: NavItem[] = [
     { name: 'Saved Insights', icon: BookmarkPlus, path: '/saved' },
 ];
 
-export default function MainLayout() {
+export default function MainLayout({ children }: MainLayoutProps) {
     const { logout } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();
@@ -220,7 +224,7 @@ export default function MainLayout() {
 
                 {/* Page Content */}
                 <main className="flex-1 overflow-hidden">
-                    <Outlet />
+                    {children || <Outlet />}
                 </main>
             </div>
         </div>
