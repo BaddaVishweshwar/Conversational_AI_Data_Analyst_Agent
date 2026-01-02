@@ -2,33 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Modern Emerald/Teal/Purple Theme */
 #root {
   min-height: 100vh;
-  background-color: #ffffff;
+  background: linear-gradient(135deg, #f0fdfa 0%, #faf5ff 100%);
+  background-attachment: fixed;
 }
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Modern Emerald/Teal/Purple Color System */
+    --background: 180 100% 99%;
+    --foreground: 215 25% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 25% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+    --popover-foreground: 215 25% 12%;
+    --primary: 160 84% 39%;
+    /* Emerald-600 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 174 84% 40%;
+    /* Teal-500 */
+    --secondary-foreground: 0 0% 100%;
+    --accent: 270 91% 65%;
+    /* Purple-500 */
+    --accent-foreground: 0 0% 100%;
+    --muted: 174 44% 96%;
+    /* Teal-50 */
+    --muted-foreground: 215 16% 47%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 174 24% 88%;
+    --input: 174 24% 88%;
+    --ring: 160 84% 39%;
+    --radius: 0.75rem;
   }
 
   .dark {
@@ -78,9 +85,11 @@
     0% {
       background-position: 0% 50%;
     }
+
     50% {
       background-position: 100% 50%;
     }
+
     100% {
       background-position: 0% 50%;
     }
@@ -122,9 +131,12 @@
   }
 
   @keyframes float {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: translateY(0px);
     }
+
     50% {
       transform: translateY(-20px);
     }
@@ -136,9 +148,12 @@
   }
 
   @keyframes pulse-glow {
-    0%, 100% {
+
+    0%,
+    100% {
       box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
     }
+
     50% {
       box-shadow: 0 0 40px rgba(99, 102, 241, 0.8);
     }
@@ -157,12 +172,10 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.3),
-      transparent
-    );
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent);
     animation: shimmer 3s infinite;
   }
 
@@ -170,6 +183,7 @@
     0% {
       left: -100%;
     }
+
     100% {
       left: 100%;
     }
@@ -185,9 +199,11 @@
       transform: scale(0.8);
       opacity: 0;
     }
+
     50% {
       transform: scale(1.05);
     }
+
     100% {
       transform: scale(1);
       opacity: 1;
@@ -204,6 +220,7 @@
       opacity: 0;
       transform: translateY(30px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);

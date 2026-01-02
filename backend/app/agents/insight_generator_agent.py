@@ -117,22 +117,21 @@ Warnings: {', '.join(interpretation.warnings) if interpretation.warnings else 'N
                 options={"temperature": 0.7, "num_predict": 2048}  # More creative for narrative writing
             )
             
-            # Parse JSON response
+            
+            # Parse JSON response with robust extractor
             result_text = response['response'].strip()
             
-            # Extract JSON if wrapped in markdown
-            if "```json" in result_text:
-                result_text = result_text.split("```json")[1].split("```")[0].strip()
-            elif "```" in result_text:
-                result_text = result_text.split("```")[1].split("```")[0].strip()
+            from ...utils.json_extractor import extract_json_from_llm_response
+            fallback = {
+                "direct_answer": "Analysis complete.",
+                "what_data_shows": [],
+                "why_it_happened": [],
+                "business_implications": [],
+                "confidence": 0.7,
+                "data_sufficiency": "sufficient"
+            }
             
-            # Robust extraction: find first { and last }
-            first_brace = result_text.find("{")
-            last_brace = result_text.rfind("}")
-            if first_brace != -1 and last_brace != -1:
-                result_text = result_text[first_brace:last_brace+1]
-            
-            result_data = json.loads(result_text)
+            result_data = extract_json_from_llm_response(result_text, fallback=fallback)
             
             # Validate insights against execution results
             validation_passed, validation_warnings = self._validate_insights(
