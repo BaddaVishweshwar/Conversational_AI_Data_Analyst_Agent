@@ -30,6 +30,7 @@ interface MainLayoutProps {
 
 const navItems: NavItem[] = [
     { name: 'Chat', icon: MessageSquare, path: '/analytics' },
+    { name: 'Datasets', icon: FolderOpen, path: '/datasets' },
     { name: 'Dashboards', icon: LayoutDashboard, path: '/dashboard' },
     { name: 'History', icon: History, path: '/history' },
     { name: 'Saved Insights', icon: BookmarkPlus, path: '/saved' },
