@@ -185,57 +185,70 @@ export default function DatasetPage() {
                             );
                         })}
                     </div>
+                )}
+
+                {/* Floating Start Analyzing Button */}
+                {selectedDatasets.length > 0 && (
+                    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+                        <Button
+                            size="lg"
+                            className="bg-accent hover:bg-accent/90 px-8 h-14 text-base shadow-2xl"
+                            onClick={handleStartAnalyzing}
+                        >
+                            Start Analyzing ({selectedDatasets.length} dataset{selectedDatasets.length > 1 ? 's' : ''})
+                        </Button>
                     </div>
                 )}
 
-            {/* Upload Section */}
-            <div className="border-t border-border pt-12">
-                <div className="flex flex-col items-center gap-4">
-                    <Button
-                        size="lg"
-                        className="bg-accent hover:bg-accent/90 px-8 h-12 text-base"
-                        onClick={() => {
-                            // Trigger file upload
-                            const input = document.createElement('input');
-                            input.type = 'file';
-                            input.accept = '.csv,.xlsx,.xls';
-                            input.onchange = async (e: any) => {
-                                const file = e.target.files[0];
-                                if (file) {
-                                    try {
-                                        setLoading(true);
-                                        await datasetsAPI.upload(file);
-                                        await loadDatasets();
-                                        alert('Dataset uploaded successfully!');
-                                    } catch (error: any) {
-                                        console.error('Upload error:', error);
-                                        alert(error.response?.data?.detail || 'Failed to upload dataset');
-                                    } finally {
-                                        setLoading(false);
+                {/* Upload Section */}
+                <div className="border-t border-border pt-12">
+                    <div className="flex flex-col items-center gap-4">
+                        <Button
+                            size="lg"
+                            className="bg-accent hover:bg-accent/90 px-8 h-12 text-base"
+                            onClick={() => {
+                                // Trigger file upload
+                                const input = document.createElement('input');
+                                input.type = 'file';
+                                input.accept = '.csv,.xlsx,.xls';
+                                input.onchange = async (e: any) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        try {
+                                            setLoading(true);
+                                            const response = await datasetsAPI.upload(file);
+                                            await loadDatasets();
+                                            // Auto-navigate to analytics page with the new dataset
+                                            const newDatasetId = response.data.id;
+                                            navigate(`/analytics?dataset=${newDatasetId}`);
+                                        } catch (error: any) {
+                                            console.error('Upload error:', error);
+                                            alert(error.response?.data?.detail || 'Failed to upload dataset');
+                                            setLoading(false);
+                                        }
                                     }
-                                }
-                            };
-                            input.click();
-                        }}
-                    >
-                        <Upload className="w-5 h-5 mr-2" />
-                        Upload Dataset
-                    </Button>
+                                };
+                                input.click();
+                            }}
+                        >
+                            <Upload className="w-5 h-5 mr-2" />
+                            Upload Dataset
+                        </Button>
 
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <button className="hover:text-accent transition-colors flex items-center gap-1.5">
-                            <Plus className="w-4 h-4" />
-                            Connect Database
-                        </button>
-                        <span>•</span>
-                        <button className="hover:text-accent transition-colors flex items-center gap-1.5">
-                            <Plus className="w-4 h-4" />
-                            Connect Cloud Storage
-                        </button>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <button className="hover:text-accent transition-colors flex items-center gap-1.5">
+                                <Plus className="w-4 h-4" />
+                                Connect Database
+                            </button>
+                            <span>•</span>
+                            <button className="hover:text-accent transition-colors flex items-center gap-1.5">
+                                <Plus className="w-4 h-4" />
+                                Connect Cloud Storage
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
         </div >
     );
 }
