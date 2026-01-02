@@ -2,42 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Pure Black Theme - ChatGPT/Perplexity/CamelAI Style */
+/* Pure Black Theme - Exact ChatGPT Style */
 #root {
   min-height: 100vh;
-  background-color: #000000;
+  background-color: #0d0d0d;
 }
 
 @layer base {
   :root {
-    /* Pure Black Theme - Minimal */
-    --background: 0 0% 0%;
-    /* Pure black */
-    --foreground: 0 0% 98%;
-    /* Off-white text */
-    --card: 0 0% 5%;
-    /* Very dark gray for cards */
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 160 84% 39%;
-    /* Emerald-600 accent */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 10%;
-    /* Dark gray */
-    --secondary-foreground: 0 0% 98%;
-    --accent: 160 84% 39%;
-    /* Emerald for highlights */
-    --accent-foreground: 0 0% 100%;
-    --muted: 0 0% 8%;
-    /* Subtle dark */
-    --muted-foreground: 0 0% 65%;
-    --destructive: 0 72% 51%;
+    /* ChatGPT Colors - Grays Only */
+    --background: 0 0% 5%;
+    /* #0d0d0d - dark gray, not pure black */
+    --foreground: 0 0% 90%;
+    /* #e5e5e5 - light gray text, not white */
+    --card: 0 0% 9%;
+    /* #171717 - slightly lighter for cards */
+    --card-foreground: 0 0% 90%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 90%;
+    --primary: 0 0% 90%;
+    /* Gray, no color */
+    --primary-foreground: 0 0% 10%;
+    --secondary: 0 0% 15%;
+    /* #262626 */
+    --secondary-foreground: 0 0% 90%;
+    --accent: 0 0% 20%;
+    /* Subtle gray for hover */
+    --accent-foreground: 0 0% 90%;
+    --muted: 0 0% 12%;
+    /* #1f1f1f */
+    --muted-foreground: 0 0% 55%;
+    /* #8c8c8c - muted gray */
+    --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 15%;
-    /* Very subtle borders */
-    --input: 0 0% 10%;
-    --ring: 160 84% 39%;
+    --border: 0 0% 18%;
+    /* #2e2e2e - very subtle */
+    --input: 0 0% 12%;
+    --ring: 0 0% 30%;
     --radius: 0.5rem;
   }
 }
@@ -49,25 +50,9 @@
     scroll-behavior: smooth;
   }
 
-  /* Minimal gradient for accents only */
-  .gradient-text {
-    background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* Minimal glass effect for hover states */
-  .glass {
-    background: rgba(10, 10, 10, 0.8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  /* Smooth fade in */
+  /* Simple fade */
   .fade-in {
-    animation: fade-in 0.3s ease-out;
+    animation: fade-in 0.2s ease-out;
   }
 
   @keyframes fade-in {
@@ -80,22 +65,22 @@
     }
   }
 
-  /* Custom Scrollbar - Pure Black */
+  /* Custom Scrollbar - ChatGPT Style */
   ::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #000000;
+    background: #0d0d0d;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #1a1a1a;
-    border-radius: 4px;
+    background: #2a2a2a;
+    border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #2a2a2a;
+    background: #3a3a3a;
   }
 }
 
@@ -107,5 +92,6 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 }
