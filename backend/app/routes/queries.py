@@ -14,6 +14,7 @@ from ..services.data_service import data_service
 from ..services.visualization_service import visualization_service
 from ..services.knowledge_service import knowledge_service
 from ..services.conversation_manager import conversation_manager
+from ..services.clarification_service import clarification_service
 
 router = APIRouter(prefix="/queries", tags=["Queries"])
 
@@ -185,6 +186,27 @@ async def ask_question(
             connection = db.query(DataConnection).filter(DataConnection.id == dataset.connection_id).first()
         else:
             df = data_service.parse_file(dataset.file_path, dataset.file_type)
+        
+        # Check for ambiguous questions (CamelAI feature)
+        ambiguity_check = await clarification_service.check_for_ambiguity(
+            question=query_request.query,
+            schema=dataset.schema
+        )
+        
+        # If ambiguous, return clarification request instead of executing
+        if ambiguity_check.get('is_ambiguous', False):
+            query.status = "needs_clarification"
+            query.error_message = None
+            query.insights = json.dumps({
+                "needs_clarification": True,
+                "question": ambiguity_check.get('clarification_needed', 'Please provide more details'),
+                "options": ambiguity_check.get('options', []),
+                "reason": ambiguity_check.get('reason', '')
+            })
+            db.commit()
+            db.refresh(query)
+            logger.info(f"Query needs clarification: {ambiguity_check.get('clarification_needed')}")
+            return query
         
         # Get conversation context (last 3 exchanges)
         context = None
