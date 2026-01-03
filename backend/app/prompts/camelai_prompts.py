@@ -231,29 +231,48 @@ Return JSON:
 def format_schema_with_samples(df, schema):
     """Format schema with sample values for prompts"""
     schema_parts = [f"Table: data (ALWAYS use this table name)"]
-    schema_parts.append(f"Total Rows: {len(df):,}")
+    schema_parts.append(f"Total Rows: {len(df):,}" if len(df) > 0 else "Total Rows: 0")
     schema_parts.append("\nColumns:")
     
-    for col in df.columns:
-        dtype = str(df[col].dtype)
+    # CRITICAL FIX: Iterate through schema['columns'] to ensure ALL columns are included
+    # even if df sample is empty or missing columns
+    columns_list = schema.get('columns', []) if isinstance(schema, dict) else []
+    
+    if not columns_list:
+        # Fallback to df.columns if schema doesn't have columns
+        columns_list = [{'name': col} for col in df.columns]
+    
+    for col_info in columns_list:
+        col_name = col_info.get('name') if isinstance(col_info, dict) else str(col_info)
         
-        # Get sample values (non-null)
-        samples = df[col].dropna().head(5).tolist()
-        sample_str = ", ".join([str(s) for s in samples])
-        
-        # Get stats
-        null_count = df[col].isnull().sum()
-        null_pct = (null_count / len(df)) * 100 if len(df) > 0 else 0
-        unique_count = df[col].nunique()
+        # Check if column exists in df
+        if col_name in df.columns:
+            dtype = str(df[col_name].dtype)
+            
+            # Get sample values (non-null)
+            samples = df[col_name].dropna().head(5).tolist()
+            sample_str = ", ".join([str(s) for s in samples])
+            
+            # Get stats
+            null_count = df[col_name].isnull().sum()
+            null_pct = (null_count / len(df)) * 100 if len(df) > 0 else 0
+            unique_count = df[col_name].nunique()
+        else:
+            # Column in schema but not in df sample - still include it!
+            dtype = col_info.get('type', 'unknown') if isinstance(col_info, dict) else 'unknown'
+            sample_str = "(no samples available)"
+            null_pct = 0
+            unique_count = 0
         
         schema_parts.append(
-            f'  - "{col}" ({dtype}):\n'
+            f'  - "{col_name}" ({dtype}):\n'
             f"    Samples: {sample_str}\n"
             f"    Unique values: {unique_count:,}\n"
             f"    Null: {null_pct:.1f}%"
         )
     
     return "\n".join(schema_parts)
+
 
 def format_conversation_history(history):
     """Format last 3 exchanges for context"""
