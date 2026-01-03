@@ -91,8 +91,13 @@ class AnalyticsServiceV3:
         logger.info(f"🚀 Starting enhanced multi-agent analysis for: '{query}'")
         
         try:
+            # Step 0: Data Quality Check (NEW - CamelAI)
+            logger.info("Step 0/9: Analyzing data quality...")
+            data_quality_report = data_quality_service.analyze(df)
+            logger.info(f"📊 Data quality score: {data_quality_report['quality_score']}/100")
+            
             # Step 1: Context Enrichment
-            logger.info("Step 1/8: Enriching schema context...")
+            logger.info("Step 1/9: Enriching schema context...")
             enriched_schema = await self._get_enriched_schema(dataset.id, df, dataset.table_name)
             
             # Step 2: Planning Phase
@@ -121,7 +126,7 @@ class AnalyticsServiceV3:
             logger.info(f"✅ Exploration complete: {len(exploratory_results)} queries executed")
             
             # Step 4: Main SQL Generation
-            logger.info("Step 4/8: Generating main SQL query...")
+            logger.info("Step 4/9: Generating main SQL query...")
             sql_result = await self._generate_main_sql(
                 query=query,
                 enriched_schema=enriched_schema,
@@ -134,8 +139,26 @@ class AnalyticsServiceV3:
             
             logger.info(f"✅ SQL generated: {len(main_sql)} characters")
             
+            # Step 4.5: SQL Validation & Auto-Correction (NEW - CamelAI)
+            logger.info("Step 4.5/9: Validating SQL...")
+            validation_result = await sql_validator.validate_and_correct(
+                sql=main_sql,
+                question=query,
+                intent_type=planning_result.get('intent', 'analysis'),
+                schema=enriched_schema,
+                max_attempts=2
+            )
+            
+            if validation_result['is_valid']:
+                logger.info(f"✅ SQL validation passed (attempts: {validation_result['attempts']})")
+            else:
+                logger.warning(f"⚠️ SQL validation issues: {validation_result['final_validation'].get('issues', [])}")
+            
+            # Use corrected SQL if available
+            main_sql = validation_result['sql']
+            
             # Step 5: Query Execution
-            logger.info("Step 5/8: Executing main query...")
+            logger.info("Step 5/9: Executing main query...")
             execution_result = await self._execute_query(main_sql, df, connection)
             
             if not execution_result.get('success'):
@@ -144,7 +167,7 @@ class AnalyticsServiceV3:
             logger.info(f"✅ Query executed: {execution_result.get('row_count', 0)} rows returned")
             
             # Step 6: Multi-Visualization Selection
-            logger.info("Step 6/8: Selecting visualizations...")
+            logger.info("Step 6/9: Selecting visualizations...")
             visualizations = await self._select_visualizations(
                 query=query,
                 query_results=execution_result,
@@ -153,17 +176,30 @@ class AnalyticsServiceV3:
             
             logger.info(f"✅ Visualizations selected: {len(visualizations)} charts")
             
-            # Step 6.5: Generate Python Charts
-            logger.info("Step 6.5/8: Generating Python visualizations...")
+            # Step 6.5: Generate Plotly Charts (NEW - CamelAI)
+            logger.info("Step 6.5/9: Generating interactive Plotly visualizations...")
+            from ..services.plotly_service import plotly_service
+            
+            plotly_charts = []
+            for viz in visualizations[:3]:  # Max 3 charts
+                chart_result = plotly_service.generate_chart(
+                    data=execution_result.get('data', []),
+                    chart_type=viz.get('type', 'bar'),
+                    config=viz.get('config', {})
+                )
+                if chart_result.get('success'):
+                    plotly_charts.append(chart_result)
+            
+            logger.info(f"✅ Plotly charts generated: {len(plotly_charts)} interactive visualizations")
+            
+            # Also generate Python/matplotlib charts for backward compatibility
             python_charts = await self._generate_python_charts(
                 visualizations=visualizations,
                 query_results=execution_result
             )
             
-            logger.info(f"✅ Charts generated: {len(python_charts)} images")
-            
             # Step 7: Executive Insight Generation
-            logger.info("Step 7/8: Generating executive insights...")
+            logger.info("Step 7/9: Generating executive insights...")
             insights = await self._generate_insights(
                 query=query,
                 execution_result=execution_result,
@@ -173,10 +209,25 @@ class AnalyticsServiceV3:
             
             logger.info(f"✅ Insights generated")
             
-            # Step 8: Response Formatting
-            logger.info("Step 8/8: Formatting final response...")
+            # Step 8: Response Structure Enforcement (NEW - CamelAI)
+            logger.info("Step 8/9: Enforcing CamelAI response structure...")
+            from ..services.response_structure_enforcer import response_structure_enforcer
+            
+            structured_response = response_structure_enforcer.enforce_structure(
+                question=query,
+                sql_query=main_sql,
+                results=execution_result.get('data', []),
+                insights=insights,
+                visualizations=plotly_charts if plotly_charts else visualizations,
+                data_quality=data_quality_report,
+                exploratory_steps=exploratory_results
+            )
+            
+            # Step 9: Final Response Formatting
+            logger.info("Step 9/9: Formatting final response...")
             total_time_ms = int((time.time() - start_time) * 1000)
             
+            # Merge structured response with standard format
             response = response_formatter_service.format_final_response(
                 query=query,
                 understanding=understanding,
@@ -191,6 +242,12 @@ class AnalyticsServiceV3:
                 schema_analysis=enriched_schema,
                 execution_time_ms=total_time_ms
             )
+            
+            # Add CamelAI-specific fields
+            response['camelai_structure'] = structured_response
+            response['data_quality'] = data_quality_report
+            response['sql_validation'] = validation_result
+            response['plotly_charts'] = plotly_charts
             
             logger.info(f"✅ Analysis complete in {total_time_ms}ms")
             return response
