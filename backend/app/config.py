@@ -24,21 +24,6 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "deepseek-r1:latest"  # Best reasoning model (strong instruction following)
     OLLAMA_TIMEOUT: int = 120
     
-    # Gemini
-    GOOGLE_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "gemini-1.5-flash-001"
-    GOOGLE_CLIENT_ID: Optional[str] = "951242114092-v8s1mbdf81sjr9oian032ag0jckmfsgk.apps.googleusercontent.com"
-    
-    # OpenAI
-    OPENAI_API_KEY: Optional[str] = None
-    OPENAI_MODEL: str = "gpt-4o-mini"
-    OPENAI_API_BASE: Optional[str] = "https://models.inference.ai.azure.com" # Default to GitHub Models for hex keys, or can be overridden
-    
-    # Anthropic/Claude
-    ANTHROPIC_API_KEY: Optional[str] = None
-    ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
-    ANTHROPIC_MAX_TOKENS: int = 4096
-    
     
     # Email Configuration
     GMAIL_USER: Optional[str] = None
@@ -51,6 +36,40 @@ class Settings(BaseSettings):
     VECTOR_DB_DIR: str = "./vector_db"
     MAX_UPLOAD_SIZE: int = 100 * 1024 * 1024  # 100MB
     ALLOWED_EXTENSIONS: set = {".csv", ".xlsx", ".xls", ".sas7bdat", ".parquet"}
+    
+    # DuckDB Configuration
+    DUCKDB_MEMORY_LIMIT: str = "4GB"
+    DUCKDB_THREADS: int = 4
+    DUCKDB_TEMP_DIR: str = "./duckdb_temp"
+    
+    # Redis Cache Configuration
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: Optional[str] = None
+    CACHE_TTL: int = 3600  # 1 hour
+    CACHE_ENABLED: bool = True
+    
+    # Vector Database (Qdrant)
+    QDRANT_HOST: str = "localhost"
+    QDRANT_PORT: int = 6333
+    QDRANT_COLLECTION_NAME: str = "dataset_schemas"
+    QDRANT_USE_MEMORY: bool = True  # Use in-memory mode for development
+    
+    # Embeddings
+    EMBEDDING_MODEL: str = "text-embedding-3-small"
+    EMBEDDING_DIMENSIONS: int = 1536
+    EMBEDDING_BATCH_SIZE: int = 100
+    
+    # Monitoring & Logging
+    LANGSMITH_API_KEY: Optional[str] = None
+    LANGSMITH_PROJECT: str = "ai-data-analyst"
+    LANGSMITH_ENABLED: bool = False
+    
+    # Multi-Agent Configuration
+    MAX_SQL_RETRIES: int = 3
+    AGENT_TIMEOUT: int = 120  # seconds
+    ENABLE_CHAIN_OF_THOUGHT: bool = True
     
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175"]

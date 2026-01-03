@@ -1,675 +1,318 @@
-AI Data Analyst - Complete Backend PRD
-1. Project Overview
-Product Name: AI Data Analyst
-Core Functionality: Natural language interface for CSV/XLSX data analysis with SQL generation, visualization, and intelligent query understanding
-Key Features:
+COMPLETE BACKEND ARCHITECTURE GUIDE
+1. CORE ARCHITECTURE COMPONENTS
+A. Multi-Agent Agentic System (Not Single Prompt)
+Don't use simple one-shot prompting. You need an iterative agent loop with multiple reasoning steps:
 
-Upload and process CSV/XLSX files
-Natural language to SQL query generation
-Automatic data visualization
-Context-aware conversation handling
-Multi-turn dialogue with query refinement
+Query Understanding Agent: Determines user intent and validates against dataset
+Schema Mapping Agent: Builds semantic understanding of your data
+SQL Generation Agent: Creates queries with multi-step reasoning
+Validation Agent: Self-corrects SQL errors
+Visualization Agent: Generates appropriate chart types
+Explanation Agent: Provides business insights
 
+B. Database Mapping System (Critical for 80% Accuracy)
+CamelAI increased query accuracy from 30% to 80% through proper database mapping Camelai. You need:
 
-2. System Architecture
-2.1 Architecture Pattern
+Automatic schema extraction: Column names, data types, relationships, sample values
+Semantic layer: Business definitions (what is "active user"? "revenue"?)
+Example query library: Store successful queries as reference patterns
+Column relationship discovery: Foreign keys, join patterns
+Data profiling: Min/max values, distributions, null percentages
+Business glossary: Map technical columns to business terms
 
-Type: Microservices/Modular Monolith
-Communication: RESTful APIs
-Data Flow: Request → NLP Processing → SQL Generation → Execution → Visualization → Response
+2. TECHNOLOGY STACK
+Backend Core:
 
-2.2 Core Components
-┌─────────────────┐
-│   API Gateway   │
-└────────┬────────┘
-         │
-    ┌────┴─────┬──────────┬───────────┐
-    │          │          │           │
-┌───▼───┐  ┌──▼──┐  ┌────▼────┐  ┌──▼───┐
-│Upload │  │ NLP │  │Query    │  │Viz   │
-│Service│  │Engine│ │Executor │  │Engine│
-└───────┘  └─────┘  └─────────┘  └──────┘
-                │
-         ┌──────▼──────┐
-         │   SQLite    │
-         │  (In-Memory)│
-         └─────────────┘
+Python 3.11+
+FastAPI (current framework, keep it)
+PostgreSQL for metadata storage
+DuckDB (CRITICAL - for in-memory SQL execution on uploaded files)
 
-3. Technology Stack
-3.1 Backend Framework
+LLM Provider & Models:
+For OpenAI API:
 
-Primary: Node.js with Express.js (Fast, scalable)
-Alternative: Python with FastAPI (Better ML integration)
+Use GPT-4o (gpt-4o-2024-08-06) - NOT GPT-3.5
+GPT-4o is required for:
 
-Recommended: Python + FastAPI for easier AI integration
-3.2 AI/LLM Integration
-
-Provider: Anthropic Claude API (Claude Sonnet 4.5)
-Reason: Superior SQL generation, context understanding, structured outputs
-Library: anthropic Python SDK
-
-3.3 Database & Query Engine
-
-In-Memory Database: SQLite (loaded from CSV/XLSX)
-Library: sqlite3 (Python) or better-sqlite3 (Node.js)
-CSV/XLSX Processing:
-
-Python: pandas, openpyxl
-Node.js: xlsx, papaparse
+Complex SQL generation with CTEs and window functions
+Multi-step reasoning
+Function calling for tool use
+Better schema understanding
 
 
 
-3.4 Visualization
+Better Alternative: Claude API (Anthropic)
 
-Approach: Return visualization configs, not images
-Format: JSON specification for charts
-Frontend Libraries: Chart.js, Recharts, or Plotly.js
-Backend Role: Determine chart type and data structure
+Claude Sonnet 4 (claude-sonnet-4-20250514) - BEST for SQL generation
+Superior reasoning for complex analytics
+CamelAI uses Claude Sonnet for text-to-SQL conversion Camelai
+Better at self-correction
+Costs less than GPT-4
 
-3.5 Additional Libraries
+Data Processing:
 
-Validation: pydantic (Python) or zod (Node.js)
-File Upload: multer (Node.js) or python-multipart (FastAPI)
-CORS: fastapi.middleware.cors or cors package
-Environment: python-dotenv or dotenv
+Pandas for data manipulation
+DuckDB for SQL execution on uploaded files (faster than SQLite)
+SQLAlchemy for database operations
+Polars (optional) for large datasets
 
+Visualization:
 
-4. Core Modules & Logic
-4.1 File Upload & Processing Module
-Responsibilities:
+Plotly (generates Python code server-side, sends JSON to frontend)
+Support: Line, Bar, Pie, Scatter, Heatmap, Box plots
 
-Accept CSV/XLSX uploads (max 50MB)
-Parse and validate file structure
-Load into SQLite in-memory database
-Generate schema metadata
-Return table structure to frontend
+3. TECHNICAL IMPLEMENTATION STRATEGY
+A. Semantic Layer & RAG System
+Build a knowledge base for each uploaded dataset:
+1. On file upload:
+   - Extract schema (columns, types)
+   - Generate statistics (value ranges, unique counts, null percentages)
+   - Sample 100-1000 rows
+   - Store embeddings of column names + descriptions
+   
+2. Create semantic index:
+   - Use text-embedding-3-small (OpenAI) or Voyage AI
+   - Store in vector DB (Qdrant, Chroma, or PostgreSQL pgvector)
+   - Index: column names, sample values, business definitions
+   
+3. Build query template library:
+   - Store successful SQL queries with natural language descriptions
+   - Use as few-shot examples
+B. Query Generation Pipeline
+The process uses an iterative agent loop with multi-step reasoning Camelai. Implement this flow:
+1. Intent Classification
+   - Is question answerable with this dataset?
+   - Question type: aggregation, filtering, trend, comparison, etc.
+   
+2. Schema Retrieval (RAG)
+   - Retrieve relevant tables/columns using embeddings
+   - Get example queries similar to current question
+   - Pull business definitions
+   
+3. SQL Generation (with Chain-of-Thought)
+   Prompt structure:
+   - System: "You are a data analyst expert..."
+   - Context: Schema + samples + definitions + similar queries
+   - Task: "Generate SQL for: {user_question}"
+   - Format: "Think step-by-step, then write SQL"
+   
+4. SQL Validation & Self-Correction
+   - Execute SQL in sandbox (DuckDB)
+   - If error: Parse error message
+   - Feed back to LLM: "This query failed with error X. Fix it."
+   - Max 3 correction attempts
+   
+5. Result Processing
+   - Check if results are empty
+   - If empty: Ask LLM to refine query or ask clarifying question
+   - If results exist: Proceed to visualization
+   
+6. Visualization Generation
+   - Analyze result structure (time series? categories? distributions?)
+   - Generate Plotly code
+   - Execute Python code in isolated environment
+   - Return Plotly JSON
+   
+7. Insight Generation
+   - Send results + query to LLM
+   - Prompt: "Analyze these results and provide 3-5 business insights"
+   - Return explanation in natural language
+C. Prompt Engineering (DON'T Fine-tune)
+DO NOT fine-tune. Use advanced prompting:
+1. System Prompt Template:
+You are an expert SQL analyst and data scientist. Your job is to:
+1. Understand user questions about data
+2. Generate accurate SQL queries
+3. Provide clear explanations
+4. Suggest visualizations
 
-Logic Flow:
-1. Receive file upload
-2. Validate file type and size
-3. Parse with pandas (CSV/XLSX)
-4. Infer data types automatically
-5. Create SQLite table with appropriate types
-6. Insert data into SQLite
-7. Generate schema JSON:
-   {
-     "table_name": "data",
-     "columns": [
-       {"name": "col1", "type": "INTEGER", "sample_values": [...]},
-       {"name": "col2", "type": "TEXT", "sample_values": [...]}
-     ],
-     "row_count": 1000
-   }
-8. Store session context
-Key Functions:
+When generating SQL:
+- Use standard SQL syntax compatible with DuckDB
+- Always use table aliases
+- Include comments explaining complex logic
+- Validate column names against schema
+- Use appropriate aggregations and filters
 
-parse_file(file) → DataFrame
-infer_schema(df) → Schema object
-load_to_sqlite(df, session_id) → Connection
-get_table_metadata(conn) → JSON schema
+If a question cannot be answered with available data, clearly state why.
+2. Few-Shot Examples:
+Include 3-5 high-quality examples:
+Example 1:
+Question: "What are the top 5 products by revenue?"
+SQL: SELECT product_name, SUM(price * quantity) as revenue 
+     FROM sales 
+     GROUP BY product_name 
+     ORDER BY revenue DESC 
+     LIMIT 5
+3. Schema Context (Critical):
+Available tables and columns:
+- sales: [id, product_id, customer_id, quantity, price, date]
+  - date range: 2023-01-01 to 2024-12-31
+  - 50,000 total rows
+  - product_id links to products.id
+  
+- products: [id, name, category, cost]
+  - 500 unique products
+  
+- customers: [id, name, email, signup_date]
+4. Chain-of-Thought Prompting:
+Before writing SQL, think through:
+1. What is the user asking for?
+2. Which tables/columns are needed?
+3. What aggregations or filters are required?
+4. What is the expected output format?
 
-
-4.2 NLP Query Understanding Module
-Responsibilities:
-
-Understand user intent
-Identify required columns and operations
-Handle ambiguous queries
-Maintain conversation context
-
-Logic Flow:
-1. Receive user question
-2. Retrieve conversation history (last 5 turns)
-3. Retrieve table schema
-4. Send to Claude with specialized prompt
-5. Extract:
-   - Intent (aggregate, filter, trend, compare, etc.)
-   - Required columns
-   - Operations needed
-   - Clarification questions (if ambiguous)
-6. Return structured response
-
-4.3 SQL Generation Module
-Responsibilities:
-
-Convert natural language to SQL
-Ensure SQL safety and correctness
-Handle complex queries (JOINs, aggregations, window functions)
-Validate against schema
-
-The Critical Prompt (CamelAI-style):
-pythonSYSTEM_PROMPT = """You are an expert SQL generator for data analysis. You convert natural language questions into SQLite queries.
-
-CONTEXT:
-- Table name: {table_name}
-- Schema: {schema_json}
-- User question: {user_question}
-- Conversation history: {conversation_history}
-
-RULES:
-1. Generate ONLY executable SQLite queries
-2. Use proper SQLite syntax (no MySQL/PostgreSQL specific functions)
-3. For aggregations, always include GROUP BY when needed
-4. For trends over time, use appropriate date functions
-5. Limit results to 1000 rows unless specifically asked for more
-6. Use column names exactly as they appear in schema
-7. For text comparisons, use LIKE with wildcards appropriately
-8. Return NULL-safe queries using COALESCE when appropriate
-
-QUERY TYPES:
-- Simple select: SELECT column FROM table WHERE condition
-- Aggregation: SELECT column, COUNT(*)/SUM()/AVG() FROM table GROUP BY column
-- Time series: SELECT date_column, metric FROM table ORDER BY date_column
-- Top N: SELECT column, COUNT(*) as count FROM table GROUP BY column ORDER BY count DESC LIMIT N
-- Comparison: Use CASE statements for bucketing
-
-OUTPUT FORMAT:
-Return a JSON object:
-{
-  "sql": "SELECT ...",
-  "query_type": "aggregation|filter|trend|comparison|summary",
-  "explanation": "Brief explanation of what the query does",
-  "requires_clarification": false,
-  "clarification_question": null
-}
-
-If the question is ambiguous or lacks context, set requires_clarification to true and provide a clarification_question.
-"""
-
-USER_PROMPT_TEMPLATE = """
-Table Schema:
-{schema_details}
-
-Recent conversation:
-{conversation_history}
-
-User question: "{user_question}"
-
-Generate the appropriate SQL query following the rules above.
-"""
-Example Schema Format for Prompt:
-pythonschema_details = """
-Table: sales_data
-Columns:
-- date (DATE): Transaction date. Sample: 2024-01-15, 2024-01-16
-- product (TEXT): Product name. Sample: Widget A, Widget B
-- quantity (INTEGER): Quantity sold. Sample: 5, 10, 15
-- revenue (REAL): Revenue in USD. Sample: 99.99, 149.50
-- region (TEXT): Sales region. Sample: North, South, East, West
-
-Total rows: 5000
-Date range: 2024-01-01 to 2024-12-31
-"""
-Function Signature:
-pythonasync def generate_sql(
-    user_question: str,
-    schema: dict,
-    conversation_history: list,
-    session_id: str
-) -> dict:
-    # Call Claude API with prompt
-    # Parse response
-    # Validate SQL syntax
-    # Return structured result
-```
-
----
-
-### 4.4 Query Execution Module
-
-**Responsibilities:**
-- Execute SQL safely
-- Handle errors gracefully
-- Format results for visualization
-- Apply row limits
-
-**Logic Flow:**
-```
-1. Receive SQL query
-2. Validate query (read-only, no DROP/DELETE/UPDATE)
-3. Execute with timeout (5 seconds max)
-4. Catch and handle errors
-5. Format results as JSON
-6. Return:
-   {
-     "success": true,
-     "data": [...],
-     "columns": [...],
-     "row_count": 100,
-     "execution_time_ms": 45
-   }
-Security Measures:
-
-Read-only connection
-Query timeout
-No DDL statements allowed
-Parameterized queries when needed
-
-
-4.5 Visualization Engine
-Responsibilities:
-
-Analyze query results
-Determine optimal chart type
-Generate chart configuration
-Return visualization spec
-
-Chart Selection Logic:
-pythondef determine_chart_type(data: list, columns: list, query_type: str) -> str:
-    """
-    Rules:
-    - 1 numeric column → Bar chart (sorted)
-    - 1 date + 1 numeric → Line chart
-    - 1 categorical + 1 numeric → Bar chart
-    - 2+ numerics → Multi-line chart or grouped bar
-    - Proportions/percentages → Pie chart (if < 10 categories)
-    - Comparisons → Horizontal bar chart
-    - Distribution → Histogram
-    - Trends over time → Line or area chart
+Then write the SQL query.
+4. QUESTION VALIDATION SYSTEM
+Build an intent validator to reject irrelevant questions:
+python# Step 1: Check if question is data-related
+def is_question_relevant(question, dataset_schema):
+    prompt = f"""
+    Dataset contains columns: {dataset_schema}
+    
+    User question: "{question}"
+    
+    Can this question be answered using this dataset?
+    Reply with JSON: {{"answerable": true/false, "reason": "explanation"}}
     """
     
-    num_cols = count_numeric_columns(columns)
-    date_cols = count_date_columns(columns)
-    cat_cols = count_categorical_columns(columns)
+    response = llm.generate(prompt)
+    return parse_json(response)
+
+# Step 2: If not answerable, return clear message
+if not is_relevant:
+    return {
+        "error": "This question cannot be answered with the current dataset.",
+        "reason": "Your dataset contains sales data, but you're asking about weather patterns.",
+        "suggestion": "Try asking about sales trends, customer behavior, or product performance."
+    }
+5. ERROR HANDLING & SELF-CORRECTION
+Implement robust error recovery:
+pythondef execute_query_with_retry(sql, max_attempts=3):
+    for attempt in range(max_attempts):
+        try:
+            result = duckdb.execute(sql).fetchall()
+            return result
+        except Exception as e:
+            if attempt == max_attempts - 1:
+                raise
+            
+            # Ask LLM to fix
+            correction_prompt = f"""
+            This SQL query failed:
+```sql
+            {sql}
+```
+            
+            Error: {str(e)}
+            
+            Fix the query and return corrected SQL only.
+            """
+            
+            sql = llm.generate(correction_prompt)
+6. VISUALIZATION GENERATION
+CamelAI runs Python code execution in a secure environment for visualizations Camelai. Implement:
+pythondef generate_visualization(query_results, question):
+    # Analyze result structure
+    prompt = f"""
+    Query results: {query_results[:5]} (showing first 5 rows)
+    Original question: "{question}"
     
-    if date_cols > 0 and num_cols >= 1:
-        return "line"
-    elif cat_cols == 1 and num_cols == 1:
-        if len(data) <= 10:
-            return "pie"
-        return "bar"
-    elif num_cols >= 2:
-        return "multi_line"
-    elif query_type == "trend":
-        return "line"
-    else:
-        return "bar"
-Visualization Prompt (for Claude):
-pythonVIZ_PROMPT = """You are a data visualization expert. Analyze the query results and determine the best visualization.
-
-QUERY RESULTS:
-{results_json}
-
-QUERY TYPE: {query_type}
-ORIGINAL QUESTION: {user_question}
-
-RULES:
-1. Choose the most appropriate chart type: bar, line, pie, scatter, area, heatmap
-2. Identify x-axis and y-axis columns
-3. Suggest colors and formatting
-4. Provide a descriptive title
-
-OUTPUT FORMAT (JSON):
-{
-  "chart_type": "bar|line|pie|scatter|area",
-  "config": {
-    "x_axis": "column_name",
-    "y_axis": "column_name" or ["col1", "col2"],
-    "title": "Descriptive title",
-    "x_label": "Label for X axis",
-    "y_label": "Label for Y axis",
-    "color_scheme": "blue|green|multi"
-  },
-  "insights": "Brief insight about the data pattern"
-}
-"""
-
-4.6 Context Management Module
-Responsibilities:
-
-Store conversation history per session
-Maintain uploaded file metadata
-Track query history
-Enable context-aware responses
-
-Data Structures:
-python# Session storage (in-memory or Redis)
-session_data = {
-    "session_id": "uuid",
-    "file_name": "sales.csv",
-    "table_name": "data",
-    "schema": {...},
-    "conversation": [
-        {"role": "user", "content": "What are total sales?"},
-        {"role": "assistant", "content": "...", "sql": "...", "viz": {...}}
-    ],
-    "created_at": "timestamp",
-    "last_activity": "timestamp"
-}
+    Generate Python code using Plotly to visualize this data.
+    Choose appropriate chart type (line, bar, pie, scatter).
+    Return only executable Python code.
+    
+    Available libraries: plotly, pandas
+    Result is already in 'df' DataFrame.
+    """
+    
+    python_code = llm.generate(prompt)
+    
+    # Execute in sandbox
+    plotly_json = execute_python_safely(python_code, df)
+    
+    return plotly_json
+7. RECOMMENDED TECH STACK SUMMARY
+yamlCore Backend:
+  - FastAPI (keep current)
+  - Python 3.11+
+  - Uvicorn/Gunicorn
+  
+LLM:
+  - Primary: Claude Sonnet 4 (Anthropic API)
+  - Fallback: GPT-4o (OpenAI API)
+  - Embeddings: text-embedding-3-small (OpenAI)
+  
+Data Processing:
+  - DuckDB (in-memory SQL, REQUIRED)
+  - Pandas
+  - Polars (for large files)
+  
+Vector Search (for RAG):
+  - Qdrant (simple, fast) OR
+  - PostgreSQL with pgvector OR
+  - Chroma (embedded)
+  
+Visualization:
+  - Plotly (server-side Python → JSON)
+  
+Task Queue:
+  - Celery + Redis (for long-running queries)
+  
+Caching:
+  - Redis (cache query results)
+  
+Monitoring:
+  - LangSmith or LangFuse (LLM tracing)
+  - Sentry (error tracking)
 ```
 
-**Functions:**
-- `create_session(file_metadata)` → session_id
-- `get_session(session_id)` → session_data
-- `add_to_history(session_id, user_msg, assistant_response)`
-- `get_conversation_context(session_id, last_n=5)` → messages
+### **8. KEY IMPLEMENTATION STEPS**
 
----
+**Phase 1: Foundation (Week 1)**
+1. Switch from Ollama to Claude Sonnet 4 API
+2. Implement DuckDB for file-based SQL execution
+3. Build schema extraction pipeline
 
-## 5. API Endpoints
+**Phase 2: Core Intelligence (Week 2)**
+4. Implement semantic layer with embeddings
+5. Build RAG system for schema retrieval
+6. Create query template library
 
-### 5.1 File Upload
+**Phase 3: Query Generation (Week 3)**
+7. Build multi-step agent with self-correction
+8. Implement question validation
+9. Add error handling and retry logic
+
+**Phase 4: Visualization (Week 4)**
+10. Build safe Python execution sandbox
+11. Implement Plotly code generation
+12. Add insight generation
+
+**Phase 5: Polish (Week 5)**
+13. Add caching layer
+14. Implement rate limiting
+15. Build monitoring and logging
+
+### **9. CRITICAL SUCCESS FACTORS**
+
+1. **Don't fine-tune** - Advanced prompting + RAG is sufficient and more flexible
+2. **Use Claude Sonnet 4** - Better than GPT-4 for SQL, cheaper
+3. **Build semantic layer** - This is what gets you from 30% to 80% accuracy
+4. **Implement self-correction** - SQL will fail; build retry logic
+5. **Use DuckDB** - Essential for fast in-memory SQL on uploaded files
+6. **Store successful queries** - Build a library of working examples
+7. **Validate questions early** - Reject irrelevant questions immediately
+8. **Multi-step reasoning** - Don't try to do everything in one prompt
+
+### **10. COST OPTIMIZATION**
 ```
-POST /api/upload
-Content-Type: multipart/form-data
-
-Request:
-- file: CSV or XLSX file
-
-Response:
-{
-  "success": true,
-  "session_id": "uuid",
-  "file_name": "sales.csv",
-  "schema": {...},
-  "row_count": 5000,
-  "preview": [first 10 rows]
-}
-```
-
-### 5.2 Query Endpoint
-```
-POST /api/query
-Content-Type: application/json
-
-Request:
-{
-  "session_id": "uuid",
-  "question": "What are the top 5 products by revenue?"
-}
-
-Response:
-{
-  "success": true,
-  "answer": "The top 5 products by revenue are...",
-  "sql": "SELECT product, SUM(revenue)...",
-  "data": [...],
-  "visualization": {
-    "chart_type": "bar",
-    "config": {...}
-  },
-  "requires_clarification": false
-}
-```
-
-### 5.3 Session Management
-```
-GET /api/session/{session_id}
-DELETE /api/session/{session_id}
-GET /api/session/{session_id}/history
-```
-
----
-
-## 6. Detailed Prompt Engineering
-
-### 6.1 Master System Prompt (CamelAI-inspired)
-```
-You are an AI Data Analyst assistant. Your role is to help users analyze their CSV/XLSX data through natural language conversation.
-
-CAPABILITIES:
-1. Understanding data analysis questions in plain English
-2. Generating accurate SQL queries for SQLite
-3. Explaining results in clear, business-friendly language
-4. Suggesting appropriate visualizations
-5. Asking clarifying questions when needed
-
-WORKFLOW:
-1. User uploads a file → You receive the schema
-2. User asks a question → You:
-   a. Understand the intent
-   b. Generate SQL if needed
-   c. Explain the results
-   d. Suggest visualization
-   e. Provide insights
-
-RESPONSE STYLE:
-- Be concise but complete
-- Use business language, not technical jargon
-- Provide context with numbers
-- Suggest follow-up analyses when relevant
-- Always validate your SQL against the schema
-
-SCHEMA CONTEXT:
-{schema_will_be_injected_here}
-
-CONVERSATION HISTORY:
-{history_will_be_injected_here}
-
-Remember: You have access to only ONE table at a time. All queries must reference this table.
-```
-
-### 6.2 SQL Generation Prompt (Production-Ready)
-```
-TASK: Generate SQLite query from natural language.
-
-SCHEMA:
-Table: {table_name}
-{column_details}
-
-QUESTION: {user_question}
-
-CONSTRAINTS:
-- Use SQLite syntax only
-- Column names are case-sensitive
-- Date format: YYYY-MM-DD
-- Use CAST for type conversions
-- Limit to 1000 rows unless specified
-- Use COALESCE for NULL handling
-
-EXAMPLES:
-Q: "What are total sales?"
-SQL: SELECT SUM(revenue) as total_sales FROM {table_name}
-
-Q: "Show me top 10 products"
-SQL: SELECT product, SUM(revenue) as revenue FROM {table_name} GROUP BY product ORDER BY revenue DESC LIMIT 10
-
-Q: "Sales trend by month in 2024"
-SQL: SELECT strftime('%Y-%m', date) as month, SUM(revenue) as revenue FROM {table_name} WHERE date >= '2024-01-01' GROUP BY month ORDER BY month
-
-YOUR TURN:
-Generate SQL for: "{user_question}"
-
-Return JSON:
-{"sql": "...", "explanation": "...", "needs_clarification": false}
-```
-
-### 6.3 Clarification Prompt
-```
-The user asked: "{user_question}"
-
-Available data: {schema_summary}
-
-This question is ambiguous because: {reason}
-
-Generate a clarification question that helps narrow down what the user wants.
-
-Examples:
-- "I see multiple date columns. Which date should I use: order_date or ship_date?"
-- "Would you like to see this by day, week, or month?"
-- "Should I include all regions or focus on a specific one?"
-
-Your clarification question:
-```
-
-### 6.4 Insight Generation Prompt
-```
-QUERY RESULTS:
-{results}
-
-ORIGINAL QUESTION: {question}
-
-Generate 2-3 key insights from these results. Focus on:
-- Notable patterns or trends
-- Unexpected findings
-- Actionable takeaways
-
-Format as bullet points, each 1-2 sentences.
-
-7. Error Handling Strategy
-7.1 Common Errors & Solutions
-Error TypeHandling StrategyInvalid SQLRetry with corrected prompt, show generic error to userEmpty resultsInform user no data matches, suggest broader queryTimeoutSuggest filtering/limiting data, optimize querySchema mismatchRe-validate schema, ask user to re-uploadAmbiguous queryReturn clarification questionFile too largeReturn 413, suggest sampling
-7.2 Error Response Format
-json{
-  "success": false,
-  "error": {
-    "code": "QUERY_ERROR",
-    "message": "I couldn't analyze that data. Could you rephrase your question?",
-    "technical_details": "SQL syntax error...",
-    "suggestions": [
-      "Try asking about specific columns",
-      "Check if column names are spelled correctly"
-    ]
-  }
-}
-```
-
----
-
-## 8. Performance Optimization
-
-### 8.1 Caching Strategy
-- Cache schema metadata per session
-- Cache common query patterns
-- Use in-memory storage for active sessions
-- Clear sessions after 1 hour of inactivity
-
-### 8.2 Query Optimization
-- Auto-add LIMIT if missing (max 10,000 rows)
-- Create indexes on frequently queried columns
-- Use query explain plan for complex queries
-
-### 8.3 LLM Call Optimization
-- Batch visualization determination with SQL generation
-- Use streaming responses for longer analyses
-- Cache similar query patterns
-
----
-
-## 9. Security Considerations
-
-### 9.1 SQL Injection Prevention
-- Whitelist-only SQL operations (SELECT)
-- No dynamic table/column names from user input
-- Parameterized queries when possible
-- Validate all SQL before execution
-
-### 9.2 File Upload Security
-- File type validation (whitelist)
-- Size limits (50MB max)
-- Scan for malicious content
-- Isolate session data per user
-
-### 9.3 API Security
-- Rate limiting: 60 requests/minute per session
-- Session timeout: 1 hour
-- API key validation for Claude
-- CORS configuration
-
----
-
-## 10. Testing Strategy
-
-### 10.1 Test Cases
-
-**Query Understanding:**
-- Simple aggregations ("What's the total revenue?")
-- Time-based queries ("Show sales in Q4 2024")
-- Comparisons ("Compare North vs South region")
-- Top N queries ("Top 10 customers")
-- Ambiguous queries (should ask for clarification)
-
-**SQL Generation:**
-- Correct syntax for all query types
-- Proper handling of NULL values
-- Date formatting
-- Aggregations with GROUP BY
-- Multi-column queries
-
-**Visualization:**
-- Correct chart type selection
-- Proper axis configuration
-- Color scheme appropriateness
-
-### 10.2 Test Data
-Create sample CSV files:
-- Sales data (1000 rows): date, product, quantity, revenue, region
-- Customer data (500 rows): customer_id, name, signup_date, total_spent
-- Time series (365 rows): daily metrics
-
----
-
-## 11. Deployment Considerations
-
-### 11.1 Environment Variables
-```
-ANTHROPIC_API_KEY=your_key
-MAX_FILE_SIZE=52428800
-SESSION_TIMEOUT=3600
-ALLOWED_ORIGINS=http://localhost:3000
-ENVIRONMENT=production
-```
-
-### 11.2 Scaling
-- Use Redis for session storage (multi-instance support)
-- Separate file storage service (S3/MinIO)
-- Load balancer for API instances
-- Queue system for long-running queries
-
-### 11.3 Monitoring
-- Track API response times
-- Monitor Claude API usage/costs
-- Log failed queries for analysis
-- Alert on error rate spikes
-
----
-
-## 12. Implementation Roadmap
-
-### Phase 1: MVP (Week 1-2)
-- File upload and parsing
-- Basic SQL generation
-- Simple query execution
-- Text-only responses
-
-### Phase 2: Visualization (Week 3)
-- Chart type determination
-- Visualization config generation
-- Frontend integration
-
-### Phase 3: Enhancement (Week 4)
-- Conversation context
-- Clarification questions
-- Insight generation
-- Error handling refinement
-
-### Phase 4: Production (Week 5-6)
-- Security hardening
-- Performance optimization
-- Comprehensive testing
-- Deployment setup
-
----
-
-## 13. Short Prompt for Cursor/Vibe Coding Tool
-```
-Build an AI Data Analyst backend in Python FastAPI that:
-
-1. Accepts CSV/XLSX uploads, loads into SQLite
-2. Uses Claude Sonnet 4.5 API to convert natural language questions to SQL
-3. Executes queries and returns results with visualization configs (JSON)
-4. Maintains session context and conversation history
-5. Handles errors gracefully with clarification questions
-
-Stack: FastAPI, pandas, sqlite3, anthropic SDK
-Key features: File upload endpoint, query endpoint with NLP→SQL→Results→Viz pipeline, session management
-Security: Read-only SQL, query validation, file size limits
-Return visualization specs as JSON (chart type + config), not images
-
-14. Critical Success Factors
-
-Prompt Quality: The SQL generation prompt is 80% of success
-Schema Context: Always pass complete schema to Claude
-Error Recovery: Graceful handling when SQL fails
-Visualization Logic: Smart chart type selection based on data shape
-Context Maintenance: Track conversation for follow-up questions
+- Cache query results (Redis): 70% cost reduction
+- Use Claude instead of GPT-4: 80% cheaper for same quality
+- Batch embed requests: text-embedding-3-small is cheap
+- Limit token usage with smart context selection (RAG)
+- Stream responses for better UX (doesn't save cost but feels faster)
+
+Expected costs (1000 queries/day):
+- Claude Sonnet 4: ~$30-50/day
+- Embeddings: ~$2/day
+- Total: ~$1,000-1,500/month at scale

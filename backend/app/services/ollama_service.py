@@ -25,60 +25,21 @@ CONTEXT_CONFIG = {
 
 class OllamaService:
     """
-    Hybrid LLM Service.
-    Supports Claude (Anthropic), OpenAI, and local Ollama models.
-    Priority: Claude → OpenAI → Ollama
+    Ollama LLM Service.
+    Uses local Ollama models for all LLM operations.
     """
     
     def __init__(self):
         self.provider = "ollama"
-        self.client = None
         self.model_name = settings.OLLAMA_MODEL
-        
-        # Priority 1: Check for Claude/Anthropic (best quality)
-        if settings.ANTHROPIC_API_KEY:
-            try:
-                from .claude_service import claude_service
-                if claude_service.is_available():
-                    self.provider = "claude"
-                    self.client = claude_service
-                    self.model_name = settings.ANTHROPIC_MODEL
-                    logger.info(f"🎯 Using Claude Provider: {self.model_name}")
-                    return
-            except ImportError:
-                logger.warning("⚠️ anthropic package not installed. Skipping Claude.")
-        
-        # Priority 2: Check for OpenAI/GitHub Models
-        if settings.OPENAI_API_KEY:
-            try:
-                from openai import OpenAI
-                self.provider = "openai"
-                self.model_name = settings.OPENAI_MODEL
-                
-                # Configure client (support custom base URL for GitHub Models)
-                client_args = {"api_key": settings.OPENAI_API_KEY}
-                if settings.OPENAI_API_BASE:
-                    client_args["base_url"] = settings.OPENAI_API_BASE
-                    
-                self.client = OpenAI(**client_args)
-                logger.info(f"🚀 Using OpenAI Provider: {self.model_name}")
-                return
-            except ImportError:
-                logger.error("❌ openai package not installed. Falling back to Ollama.")
-        
-        # Priority 3: Fallback to Ollama (local, slow but works offline)
         self.client = ollama.Client(host=settings.OLLAMA_HOST)
         logger.info(f"🦙 Using Ollama Provider: {self.model_name}")
 
+
     def check_availability(self) -> bool:
-        """Check if LLM service is configured and available"""
-        if self.provider == "claude":
-            return bool(settings.ANTHROPIC_API_KEY)
-        elif self.provider == "openai":
-            return bool(settings.OPENAI_API_KEY)
-        else:
-            # For Ollama, we could check connectivity, but for now just config
-            return True
+        """Check if Ollama service is available"""
+        return True
+
 
     def generate_response(
         self, 
@@ -89,7 +50,7 @@ class OllamaService:
         task_type: Optional[str] = None
     ) -> str:
         """
-        Generate LLM response using configured provider.
+        Generate LLM response using Ollama.
         
         Args:
             prompt: User prompt
@@ -103,48 +64,6 @@ class OllamaService:
             temperature = TEMPERATURE_CONFIG[task_type]
             logger.debug(f"Using task-specific temperature for {task_type}: {temperature}")
         
-        # Claude Provider
-        if self.provider == "claude":
-            try:
-                return self.client.generate_response(
-                    prompt=prompt,
-                    system_prompt=system_prompt,
-                    json_mode=json_mode,
-                    temperature=temperature
-                )
-            except Exception as e:
-                logger.error(f"Claude generation error: {e}")
-                raise e
-        
-        # OpenAI Provider
-        if self.provider == "openai":
-            import openai
-            messages = []
-            if system_prompt:
-                messages.append({"role": "system", "content": system_prompt})
-            messages.append({"role": "user", "content": prompt})
-            
-            response_format = {"type": "json_object"} if json_mode else None
-            
-            try:
-                completion = self.client.chat.completions.create(
-                    model=self.model_name,
-                    messages=messages,
-                    temperature=temperature,
-                    response_format=response_format
-                )
-                return completion.choices[0].message.content
-            except (openai.AuthenticationError, openai.APIConnectionError, openai.APIError) as e:
-                logger.warning(f"⚠️ OpenAI Error: {e}. Falling back to Ollama.")
-                self.provider = "ollama"
-                self.model_name = settings.OLLAMA_MODEL
-                self.client = ollama.Client(host=settings.OLLAMA_HOST)
-                # Retry with Ollama
-                return self.generate_response(prompt, system_prompt, json_mode, temperature, task_type)
-            except Exception as e:
-                logger.error(f"OpenAI Generation Error: {e}")
-                raise e
-
         # Ollama Implementation with enhanced context
         options = {
             "temperature": temperature,
@@ -164,6 +83,7 @@ class OllamaService:
             options=options
         )
         return response['response']
+
     
     def generate(
         self,

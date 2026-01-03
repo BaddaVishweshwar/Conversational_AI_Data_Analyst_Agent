@@ -12,7 +12,7 @@ from ..routes.auth import get_current_user
 from ..services.data_service import data_service
 from ..config import settings
 
-from ..services.ai_service import ai_service
+from ..services.ollama_service import ollama_service
 from ..services.visualization_service import visualization_service
 
 router = APIRouter(prefix="/datasets", tags=["Datasets"])
@@ -171,35 +171,43 @@ async def create_dataset_from_connection(
     return dataset
 
 def process_dataset_task(dataset_id: int, file_path: str, file_type: str, db: Session):
-    """Background task to process dataset"""
-    # Create new session since the one passed might be closed
-    # But for simplicity in this synchronous flow we might need to handle session carefullly
-    # Actually, SQLAlchemy objects from different sessions can be tricky.
-    # It's better to create a fresh session here, but db is dependency injected.
-    # We'll try to use a fresh session lookup if possible, or just re-query.
+    """Background task to process dataset with V4 schema extraction"""
+    import asyncio
     
     try:
-        # Re-query dataset to attach to session if needed, 
-        # or just use the ID to update
-        # We need a new session context here usually
         from ..database import SessionLocal
+        from ..services.schema_extraction_service import schema_extraction_service
+        
         with SessionLocal() as session:
             dataset = session.query(Dataset).filter(Dataset.id == dataset_id).first()
             if not dataset:
                 return
 
             try:
-                df = data_service.parse_file(file_path, file_type)
-                schema = data_service.get_schema(df)
-                sample_data = data_service.get_sample_data(df)
+                # Use V4 schema extraction service (includes profiling, semantic tagging, embeddings)
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
                 
-                dataset.row_count = len(df)
-                dataset.column_count = len(df.columns)
-                dataset.schema = schema
-                dataset.sample_data = sample_data
-                dataset.status = "completed"
+                extraction_result = loop.run_until_complete(
+                    schema_extraction_service.extract_and_store_schema(
+                        dataset_id=dataset_id,
+                        file_path=file_path,
+                        db=session
+                    )
+                )
                 
-                session.commit()
+                loop.close()
+                
+                if extraction_result['success']:
+                    # Schema extraction already updated the dataset record
+                    # Just mark as completed
+                    dataset.status = "completed"
+                    session.commit()
+                    print(f"✅ Dataset {dataset_id} processed with V4 schema extraction")
+                else:
+                    dataset.status = "error"
+                    dataset.error_message = "Schema extraction failed"
+                    session.commit()
                 
             except Exception as e:
                 dataset.status = "error"
@@ -333,7 +341,7 @@ async def get_dataset_eda(
             pass
 
         # Generate report plan
-        eda_plan = ai_service.generate_eda_report(
+        eda_plan = ollama_service.generate_eda_report(
             schema=dataset.schema,
             sample_data=dataset.sample_data
         )

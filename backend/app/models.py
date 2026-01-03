@@ -220,3 +220,148 @@ class AdminAuditLog(Base):
     # Relationships
     admin_user = relationship("User", foreign_keys=[admin_user_id])
     target_user = relationship("User", foreign_keys=[target_user_id])
+
+
+# ============================================================================
+# SEMANTIC LAYER MODELS - For Professional Multi-Agent System
+# ============================================================================
+
+class DatasetSchema(Base):
+    """Enhanced schema metadata with embeddings for RAG"""
+    __tablename__ = "dataset_schemas"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    dataset_id = Column(Integer, ForeignKey("datasets.id"), nullable=False)
+    
+    # Schema information
+    table_name = Column(String, nullable=False)
+    column_name = Column(String, nullable=False)
+    data_type = Column(String, nullable=False)
+    
+    # Semantic information
+    business_name = Column(String)  # Human-friendly name
+    description = Column(Text)  # What this column represents
+    semantic_tags = Column(JSON)  # Tags like 'metric', 'dimension', 'date', etc.
+    
+    # Embeddings for RAG
+    embedding = Column(JSON)  # Vector embedding of column name + description
+    
+    # Relationships and constraints
+    foreign_key_to = Column(String)  # References to other tables
+    is_primary_key = Column(Boolean, default=False)
+    is_nullable = Column(Boolean, default=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    dataset = relationship("Dataset")
+
+
+class ColumnProfile(Base):
+    """Statistical profile of dataset columns"""
+    __tablename__ = "column_profiles"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    dataset_id = Column(Integer, ForeignKey("datasets.id"), nullable=False)
+    column_name = Column(String, nullable=False)
+    
+    # Statistics
+    null_count = Column(Integer)
+    null_percentage = Column(Integer)
+    unique_count = Column(Integer)
+    unique_percentage = Column(Integer)
+    
+    # For numeric columns
+    min_value = Column(String)
+    max_value = Column(String)
+    mean_value = Column(String)
+    median_value = Column(String)
+    std_dev = Column(String)
+    
+    # For categorical columns
+    top_values = Column(JSON)  # Most common values with counts
+    cardinality = Column(Integer)  # Number of unique values
+    
+    # Sample data
+    sample_values = Column(JSON)  # Representative sample values
+    
+    # Data quality
+    has_outliers = Column(Boolean, default=False)
+    outlier_info = Column(JSON)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    dataset = relationship("Dataset")
+
+
+class QueryTemplate(Base):
+    """Library of successful queries for few-shot learning"""
+    __tablename__ = "query_templates"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    dataset_id = Column(Integer, ForeignKey("datasets.id"))
+    
+    # Query information
+    natural_language = Column(Text, nullable=False)
+    sql_query = Column(Text, nullable=False)
+    query_type = Column(String)  # aggregation, filtering, trend, comparison, etc.
+    
+    # Metadata
+    description = Column(Text)  # What this query does
+    tags = Column(JSON)  # Categorization tags
+    complexity = Column(String)  # simple, medium, complex
+    
+    # Performance tracking
+    success_count = Column(Integer, default=0)  # How many times it helped
+    last_used = Column(DateTime)
+    
+    # Embeddings for similarity search
+    embedding = Column(JSON)  # Vector embedding of natural language query
+    
+    # Context
+    schema_context = Column(JSON)  # Tables/columns used
+    business_context = Column(Text)  # Business meaning
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    created_by = Column(Integer, ForeignKey("users.id"))
+    
+    # Relationships
+    dataset = relationship("Dataset")
+    user = relationship("User")
+
+
+class SemanticMapping(Base):
+    """Business term definitions and mappings"""
+    __tablename__ = "semantic_mappings"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    dataset_id = Column(Integer, ForeignKey("datasets.id"))
+    
+    # Business term
+    business_term = Column(String, nullable=False, index=True)
+    definition = Column(Text, nullable=False)
+    
+    # Technical mapping
+    sql_expression = Column(Text)  # How to calculate this metric
+    columns_used = Column(JSON)  # Which columns are involved
+    
+    # Examples
+    example_usage = Column(Text)
+    sample_values = Column(JSON)
+    
+    # Categorization
+    category = Column(String)  # metric, dimension, kpi, etc.
+    synonyms = Column(JSON)  # Alternative terms
+    
+    # Embeddings
+    embedding = Column(JSON)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    created_by = Column(Integer, ForeignKey("users.id"))
+    
+    # Relationships
+    dataset = relationship("Dataset")
+    user = relationship("User")
+
