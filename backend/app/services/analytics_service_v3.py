@@ -21,17 +21,18 @@ from ..services.ollama_service import ollama_service
 from ..services.context_enrichment_service import context_enrichment_service
 from ..services.response_formatter_service import response_formatter_service
 from ..agents.enhanced_exploration_agent import enhanced_exploration_agent
+from ..prompts.camelai_prompts import (
+    MASTER_SYSTEM_PROMPT,
+    SQL_GENERATION_PROMPT,
+    INSIGHT_PROMPT,
+    VISUALIZATION_PROMPT,
+    format_schema_with_samples,
+    format_conversation_history
+)
 from ..prompts.enhanced_prompts import (
-    PLANNING_PROMPT_TEMPLATE,
-    SQL_GENERATION_PROMPT_TEMPLATE,
-    INSIGHT_GENERATION_PROMPT_TEMPLATE,
-    VISUALIZATION_SELECTION_PROMPT_TEMPLATE,
-    format_schema_for_prompt,
-    format_sample_data_for_prompt,
-    format_column_statistics_for_prompt,
-    format_conversation_context_for_prompt,
     format_exploratory_findings_for_prompt
 )
+
 
 logger = logging.getLogger(__name__)
 
@@ -273,24 +274,33 @@ class AnalyticsServiceV3:
     ) -> Dict[str, Any]:
         """Generate main SQL query informed by exploration."""
         try:
-            # Format context
-            schema_details = format_schema_for_prompt(enriched_schema)
-            sample_data = format_sample_data_for_prompt(enriched_schema.get('sample_data', []))
-            exploratory_findings = format_exploratory_findings_for_prompt(exploratory_results)
-            analysis_plan = f"Approach: {planning_result.get('approach', 'N/A')}"
+            # Format schema with samples (CamelAI style)
+            import pandas as pd
+            # Create a small sample DataFrame for schema formatting
+            sample_data = enriched_schema.get('sample_data', [])
+            if sample_data:
+                df_sample = pd.DataFrame(sample_data[:100])
+            else:
+                # Fallback: create empty DataFrame with column info
+                columns = [col['name'] for col in enriched_schema.get('columns', [])]
+                df_sample = pd.DataFrame(columns=columns)
             
-            # Create prompt
-            prompt = SQL_GENERATION_PROMPT_TEMPLATE.format(
-                question=query,
-                schema_details=schema_details,
-                sample_data=sample_data,
-                exploratory_findings=exploratory_findings,
-                analysis_plan=analysis_plan
+            schema_with_samples = format_schema_with_samples(df_sample, enriched_schema)
+            
+            # Format conversation history
+            last_3_exchanges = format_conversation_history([])  # TODO: Add actual history
+            
+            # Create prompt using CamelAI template
+            prompt = SQL_GENERATION_PROMPT.format(
+                schema_with_samples=schema_with_samples,
+                last_3_exchanges=last_3_exchanges,
+                user_question=query
             )
             
-            # Generate with LLM
+            # Generate with LLM using MASTER_SYSTEM_PROMPT
             response = ollama_service.generate_response(
                 prompt=prompt,
+                system_prompt=MASTER_SYSTEM_PROMPT,
                 json_mode=True,
                 task_type='sql_generation'
             )
@@ -303,7 +313,7 @@ class AnalyticsServiceV3:
             logger.error(f"Error generating SQL: {str(e)}")
             # Fallback to simple SELECT
             return {
-                'sql': f"SELECT * FROM {enriched_schema.get('table_name', 'data')} LIMIT 100",
+                'sql': f"SELECT * FROM data LIMIT 100",
                 'explanation': 'Fallback query due to generation error',
                 'complexity': 'simple'
             }
@@ -382,27 +392,34 @@ class AnalyticsServiceV3:
                     else:
                         column_types[col] = 'text'
             
-            # Create prompt
-            prompt = VISUALIZATION_SELECTION_PROMPT_TEMPLATE.format(
-                question=query,
-                column_names=', '.join(columns),
-                column_types=str(column_types),
+            # Create prompt using CamelAI template
+            column_info = ", ".join([f"{col} ({column_types.get(col, 'unknown')})" for col in columns])
+            results_json = json.dumps(data[:10], indent=2, default=str)
+            
+            prompt = VISUALIZATION_PROMPT.format(
+                results_json=results_json,
+                column_info=column_info,
                 row_count=row_count,
-                has_time_column=has_time_column,
-                has_categorical_column=has_categorical_column,
-                numeric_columns=', '.join(numeric_columns),
-                query_intent=planning_result.get('understanding', 'analysis')
+                user_question=query
             )
             
-            # Generate with LLM
+            # Generate with LLM using MASTER_SYSTEM_PROMPT
             response = ollama_service.generate_response(
                 prompt=prompt,
+                system_prompt=MASTER_SYSTEM_PROMPT,
                 json_mode=True,
                 task_type='visualization'
             )
             
             # Parse JSON
             result = json.loads(response)
+            # Wrap single chart in array if needed
+            if 'chart_type' in result:
+                return [{
+                    'type': result['chart_type'],
+                    'config': result.get('config', {}),
+                    'purpose': result.get('reasoning', '')
+                }]
             return result.get('visualizations', [])
             
         except Exception as e:
@@ -467,35 +484,18 @@ class AnalyticsServiceV3:
         try:
             # Format results for prompt
             data = execution_result.get('data', [])
-            formatted_results = json.dumps(data[:20], indent=2, default=str)  # Limit to 20 rows
+            results_json = json.dumps(data[:20], indent=2, default=str)  # Limit to 20 rows
             
-            # Format exploratory findings
-            exploratory_findings = format_exploratory_findings_for_prompt(exploratory_results)
-            
-            # Get context
-            total_rows = execution_result.get('row_count', 0)
-            date_range = enriched_schema.get('date_range', {})
-            date_range_str = f"{date_range.get('min', 'N/A')} to {date_range.get('max', 'N/A')}" if date_range else "N/A"
-            
-            # Get key metrics (numeric columns)
-            key_metrics = ', '.join([
-                col['name'] for col in enriched_schema.get('columns', [])
-                if col.get('semantic_type') in ['NUMERIC', 'INTEGER']
-            ][:5])
-            
-            # Create prompt
-            prompt = INSIGHT_GENERATION_PROMPT_TEMPLATE.format(
-                question=query,
-                formatted_results=formatted_results,
-                exploratory_findings=exploratory_findings,
-                total_rows=total_rows,
-                date_range=date_range_str,
-                key_metrics=key_metrics or 'N/A'
+            # Create prompt using CamelAI template
+            prompt = INSIGHT_PROMPT.format(
+                results_json=results_json,
+                question=query
             )
             
-            # Generate with LLM
+            # Generate with LLM using MASTER_SYSTEM_PROMPT
             response = ollama_service.generate_response(
                 prompt=prompt,
+                system_prompt=MASTER_SYSTEM_PROMPT,
                 json_mode=True,
                 task_type='insight_generation'
             )
@@ -508,9 +508,7 @@ class AnalyticsServiceV3:
             logger.error(f"Error generating insights: {str(e)}")
             return {
                 'summary': 'Analysis completed successfully.',
-                'key_findings': ['Data retrieved and processed.'],
-                'detailed_analysis': 'The query executed successfully and returned results.',
-                'recommendations': None
+                'insights': ['Data retrieved and processed.']
             }
     
     def _create_error_response(self, query: str, error: str) -> Dict[str, Any]:
