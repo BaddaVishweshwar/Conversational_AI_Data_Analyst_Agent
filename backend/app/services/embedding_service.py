@@ -22,7 +22,8 @@ class EmbeddingService:
     
     def __init__(self):
         """Initialize embedding service with OpenRouter support"""
-        self.api_key = settings.OPENAI_API_KEY
+        # Make API key optional - get it if it exists
+        self.api_key = getattr(settings, 'OPENAI_API_KEY', None)
         
         # Check if using OpenRouter (key starts with sk-or-)
         self.use_openrouter = self.api_key and self.api_key.startswith('sk-or-')
@@ -34,11 +35,12 @@ class EmbeddingService:
             logger.info("Using OpenRouter for embeddings")
         else:
             # Direct OpenAI configuration
-            self.model = settings.EMBEDDING_MODEL
-            self.dimensions = settings.EMBEDDING_DIMENSIONS
-            logger.info("Using OpenAI directly for embeddings")
+            self.model = getattr(settings, 'EMBEDDING_MODEL', 'text-embedding-3-small')
+            self.dimensions = getattr(settings, 'EMBEDDING_DIMENSIONS', 1536)
+            if self.api_key:
+                logger.info("Using OpenAI directly for embeddings")
         
-        self.batch_size = settings.EMBEDDING_BATCH_SIZE  # Add batch_size for all configurations
+        self.batch_size = getattr(settings, 'EMBEDDING_BATCH_SIZE', 100)  # Add batch_size for all configurations
         
         if self.api_key:
             try:
@@ -59,8 +61,9 @@ class EmbeddingService:
                 logger.error(f"Failed to initialize embedding client: {str(e)}")
                 self.client = None
         else:
-            logger.warning("OpenAI API key not configured. Embedding service will not work.")
+            logger.warning("⚠️ OpenAI API key not configured. Embedding service will not work. RAG features disabled.")
             self.client = None
+
     
     def generate_embedding(self, text: str) -> Optional[List[float]]:
         """

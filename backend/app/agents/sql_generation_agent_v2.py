@@ -1,8 +1,9 @@
 """
-SQL Generation Agent - Professional SQL Query Generation
+SQL Generation Agent - CamelAI-Grade SQL Query Generation
 
-This agent generates production-ready SQL queries using Claude Sonnet 4 with:
+This agent generates production-ready SQL queries using:
 - Chain-of-thought reasoning
+- Few-shot learning with high-quality examples
 - DuckDB-specific optimizations
 - Comprehensive error handling
 - Professional SQL best practices
@@ -12,10 +13,13 @@ from typing import Dict, Any, Optional, List
 import logging
 import re
 from ..services.ollama_service import ollama_service
-from ..prompts.system_prompts import SQL_GENERATION_SYSTEM_PROMPT
+from ..prompts.sql_system_prompts import SQL_GENERATION_SYSTEM_PROMPT
+from ..prompts.few_shot_examples import get_examples_by_intent, format_examples_for_prompt
+from ..prompts.chain_of_thought_templates import COT_SQL_GENERATION_TEMPLATE
 from ..config import settings
 
 logger = logging.getLogger(__name__)
+
 
 
 class SQLGenerationAgent:
@@ -158,42 +162,97 @@ class SQLGenerationAgent:
         return "\n".join(context_parts)
     
     async def _generate_with_cot(self, context: str) -> str:
-        """Generate SQL with chain-of-thought reasoning"""
-        cot_prompt = f"""{context}
+        """Generate SQL with chain-of-thought reasoning and few-shot examples"""
+        # Extract intent from context for few-shot selection
+        intent = "DESCRIPTIVE"  # default
+        if "**Intent:**" in context:
+            intent_line = [line for line in context.split('\n') if '**Intent:**' in line]
+            if intent_line:
+                intent = intent_line[0].split('**Intent:**')[1].strip()
+        
+        # Get relevant few-shot examples based on intent
+        examples = get_examples_by_intent(intent, limit=3)
+        few_shot_text = format_examples_for_prompt(examples)
+        
+        # Extract question and schema from context
+        question = ""
+        schema = ""
+        if "**User Question:**" in context:
+            question_line = [line for line in context.split('\n') if '**User Question:**' in line]
+            if question_line:
+                question = question_line[0].split('**User Question:**')[1].strip()
+        
+        if "**Available Schema:**" in context:
+            schema_start = context.find("**Available Schema:**")
+            schema_end = context.find("**", schema_start + 20)
+            if schema_end == -1:
+                schema = context[schema_start:]
+            else:
+                schema = context[schema_start:schema_end]
+        
+        # Build CoT prompt with few-shot examples
+        cot_prompt = f"""{self.system_prompt}
 
-**Instructions:**
-1. First, think through the problem step-by-step (chain-of-thought reasoning)
-2. Then, write the final SQL query
+{few_shot_text}
 
-Format your response as:
-```reasoning
-[Your step-by-step thinking process]
-```
+Now, generate SQL for this new question:
 
-```sql
-[Your final SQL query]
-```
+**User Question:** {question}
+
+{schema}
+
+Think step-by-step:
+1. What is the user asking?
+2. Which columns are needed?
+3. What operations (aggregation, filtering, sorting)?
+4. What is the SQL structure?
+
+Then provide ONLY the SQL query:
 """
         
         response = await ollama_service.generate(
-            system_prompt=self.system_prompt,
+            system_prompt="You are an expert SQL analyst. Generate accurate DuckDB SQL queries.",
             user_prompt=cot_prompt,
-            temperature=0.1,
+            temperature=0.1,  # CamelAI-grade: very deterministic
+            task_type='sql_generation',
             max_tokens=2000
         )
         
         return response
     
     async def _generate_direct(self, context: str) -> str:
-        """Generate SQL directly without explicit chain-of-thought"""
+        """Generate SQL directly with few-shot examples but without explicit CoT"""
+        # Extract intent from context
+        intent = "DESCRIPTIVE"
+        if "**Intent:**" in context:
+            intent_line = [line for line in context.split('\n') if '**Intent:**' in line]
+            if intent_line:
+                intent = intent_line[0].split('**Intent:**')[1].strip()
+        
+        # Get relevant few-shot examples
+        examples = get_examples_by_intent(intent, limit=2)
+        few_shot_text = format_examples_for_prompt(examples)
+        
+        # Build prompt with examples
+        full_prompt = f"""{self.system_prompt}
+
+{few_shot_text}
+
+Now generate SQL for:
+
+{context}
+"""
+        
         response = await ollama_service.generate(
-            system_prompt=self.system_prompt,
-            user_prompt=context,
-            temperature=0.1,
+            system_prompt="You are an expert SQL analyst.",
+            user_prompt=full_prompt,
+            temperature=0.1,  # CamelAI-grade: deterministic
+            task_type='sql_generation',
             max_tokens=1500
         )
         
         return response
+
     
     def _extract_sql(self, response: str) -> str:
         """Extract SQL from the response"""

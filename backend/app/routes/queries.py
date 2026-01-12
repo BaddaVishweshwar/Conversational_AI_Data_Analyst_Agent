@@ -236,128 +236,95 @@ async def ask_question(
             
             logger.info(f"Using conversation context with {len(history)} previous exchanges")
         
-        # Execute enhanced multi-agent analytics pipeline (V3 - CamelAI-grade)
-        analysis_response = await analytics_service_v3.analyze(
-            query=query_request.query,
-            dataset=dataset,
-            df=df,
-            connection=connection,
-            context=context
+        # Execute CamelAI-grade multi-agent analytics pipeline (V4)
+        logger.info(f"🚀 Using V4 CamelAI-grade pipeline for query: {query_request.query}")
+        analysis_response = await analytics_service_v4.analyze_query(
+            user_question=query_request.query,
+            dataset_id=dataset.id,
+            db=db
         )
         
-        # Check if analysis succeeded (V3 format)
+        # Check if analysis succeeded (V4 format)
         if not analysis_response.get('success', False):
             query.status = "error"
-            error_details = analysis_response.get('error', {})
-            query.error_message = error_details.get('details', 'Analysis failed')
+            query.error_message = analysis_response.get('error', 'Analysis failed')
+            query.insights = analysis_response.get('reason', '')
             db.commit()
             db.refresh(query)
             return query
         
-        # Extract results from V3 response
-        sql_query_info = analysis_response.get('sql_query', {})
-        results_info = analysis_response.get('results', {})
-        insights_info = analysis_response.get('insights', {})
-        visualizations = analysis_response.get('visualizations', [])
-        exploratory_steps = analysis_response.get('exploratory_steps', [])
+        # Extract results from V4 response
+        sql_query = analysis_response.get('sql', '')
+        result_data = analysis_response.get('data', [])
+        row_count = analysis_response.get('row_count', 0)
+        insights = analysis_response.get('insights', '')
+        visualization = analysis_response.get('visualization', {})
+        metadata = analysis_response.get('metadata', {})
         
-        # V3 doesn't need separate Python viz generation - it's included in visualizations
-        python_viz = {"success": False, "image": None}
+        # Prepare visualization config for frontend
+        viz_config = {
+            "type": visualization.get('chart_type', 'table'),
+            "reason": visualization.get('reason', ''),
+            "data": result_data,
+            "columns": list(result_data[0].keys()) if result_data else []
+        }
         
-        # Format insights as text for database storage
-        insights_text = f"""### 📊 Executive Summary
-{insights_info.get('summary', 'Analysis completed successfully.')}
-
-### 🔍 Key Findings
-{chr(10).join('- ' + finding for finding in insights_info.get('key_findings', []))}
-
-### 📈 Detailed Analysis
-{insights_info.get('detailed_analysis', 'See results above.')}
-"""
-        
-        if insights_info.get('recommendations'):
-            insights_text += f"""
-### 💡 Recommendations
-{insights_info.get('recommendations', '')}
-"""
-        
-        # Prepare visualization config for frontend (use first visualization)
-        viz_config = {}
-        if visualizations:
-            first_viz = visualizations[0]
-            viz_config = {
-                "type": first_viz.get('type', 'table'),
-                "config": first_viz.get('config', {}),
-                "data": results_info.get('data', []),
-                "columns": results_info.get('columns', [])
-            }
-        else:
-            # Fallback to table view
-            viz_config = {
-                "type": "table",
-                "data": results_info.get('data', []),
-                "columns": results_info.get('columns', [])
-            }
-        
-        # Update query with all results
-        execution_time = int((time.time() - start_time) * 1000)
-        query.generated_sql = sql_query_info.get('query', '')
-        query.generated_code = analysis_response.analysis_plan.python_code
-        query.result_data = results_info.get('data', [])
+        # Update query with results
+        execution_time = analysis_response.get('execution_time', int((time.time() - start_time) * 1000))
+        query.generated_sql = sql_query
+        query.result_data = result_data
         query.visualization_config = viz_config
-        query.python_chart = python_viz["image"] if python_viz["success"] else None
-        query.insights = insights_text
+        query.insights = insights
         query.execution_time = execution_time
         query.status = "success"
+        query.intent = analysis_response.get('intent', 'DESCRIPTIVE')
         
-        # Store enhanced V3 metadata
-        query.intent = analysis_response.get('intent', {}).get('primary_intent', 'analysis')
+        # Store V4 metadata
         query.analysis_plan = {
-            "understanding": analysis_response.get('understanding', ''),
-            "approach": analysis_response.get('approach', ''),
-            "exploratory_steps": [
-                {
-                    "question": step.get('question', ''),
-                    "finding": step.get('finding', '')
-                }
-                for step in exploratory_steps
-            ],
-            "sql_explanation": sql_query_info.get('explanation', '')
+            "interpretation": analysis_response.get('interpretation', ''),
+            "sql_attempts": metadata.get('sql_attempts', 1),
+            "columns_retrieved": metadata.get('rag_context_summary', {}).get('columns_retrieved', 0),
+            "similar_queries_found": metadata.get('rag_context_summary', {}).get('similar_queries_found', 0),
+            "reasoning": metadata.get('reasoning', '')
         }
         query.schema_analysis = {
-            "total_rows": analysis_response.get('metadata', {}).get('schema_columns', 0),
-            "exploratory_queries_count": len(exploratory_steps),
-            "visualizations_count": len(visualizations)
+            "query_analysis": metadata.get('query_analysis', {}),
+            "rag_summary": metadata.get('rag_context_summary', {})
         }
         query.reasoning_steps = [
-            f"Understanding: {analysis_response.get('understanding', '')}",
-            f"Approach: {analysis_response.get('approach', '')}",
-            f"Exploratory queries: {len(exploratory_steps)}",
-            f"Main SQL generated with {sql_query_info.get('complexity', 'unknown')} complexity",
-            f"Visualizations: {len(visualizations)} charts selected",
-            f"Executive insights generated"
+            f"Intent: {analysis_response.get('intent', 'DESCRIPTIVE')}",
+            f"Interpretation: {analysis_response.get('interpretation', '')}",
+            f"SQL attempts: {metadata.get('sql_attempts', 1)}",
+            f"RAG columns retrieved: {metadata.get('rag_context_summary', {}).get('columns_retrieved', 0)}",
+            f"Similar queries found: {metadata.get('rag_context_summary', {}).get('similar_queries_found', 0)}"
         ]
         
         db.commit()
         db.refresh(query)
         
         # Save to knowledge base for RAG
-        knowledge_service.add_expertise(
-            query=query_request.query,
-            sql=sql_query_info.get('query', ''),
-            result_summary=f"{results_info.get('row_count', 0)} rows returned",
-            dataset_id=dataset.id
-        )
+        from ..services.rag_service import rag_service
+        try:
+            await rag_service.store_successful_query(
+                dataset_id=dataset.id,
+                natural_language=query_request.query,
+                sql_query=sql_query,
+                intent=analysis_response.get('intent', 'DESCRIPTIVE'),
+                db=db
+            )
+            logger.info("✅ Stored query in RAG knowledge base")
+        except Exception as e:
+            logger.warning(f"Failed to store query in RAG: {str(e)}")
         
         # Add to conversation history for context-aware follow-ups
         if query_request.session_id:
             conversation_manager.add_exchange(
                 session_id=query_request.session_id,
                 user_query=query_request.query,
-                sql_query=sql_query_info.get('query'),
-                results=results_info.get('data', [])[:5],  # Store sample
-                insights=insights_text,
-                visualizations=visualizations
+                sql_query=sql_query,
+                results=result_data[:5],  # Store sample
+                insights=insights,
+                visualizations=[visualization]
             )
             logger.info(f"Added exchange to conversation history")
         

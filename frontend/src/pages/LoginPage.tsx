@@ -4,7 +4,6 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Database, Mail, Lock } from 'lucide-react';
 import { api } from '../lib/api';
-import { GoogleLogin } from '@react-oauth/google';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -38,28 +37,6 @@ export default function LoginPage() {
         }
     };
 
-    const handleGoogleSuccess = async (credentialResponse: any) => {
-        try {
-            setLoading(true);
-            const response = await api.post('/auth/google', {
-                id_token: credentialResponse.credential
-            });
-
-            // Save tokens
-            localStorage.setItem('access_token', response.data.access_token);
-            localStorage.setItem('refresh_token', response.data.refresh_token);
-
-            // Navigate to analytics
-            navigate('/chat');
-            window.location.reload();
-        } catch (err: any) {
-            console.error("Google Login Error", err);
-            setError(err.response?.data?.detail || 'Google Login Failed');
-        } finally {
-            setLoading(false)
-        }
-    };
-
     return (
         <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
             {/* Subtle background effect */}
@@ -85,25 +62,6 @@ export default function LoginPage() {
                         <p className="text-sm text-muted-foreground">
                             Sign in to continue to your analytics workspace
                         </p>
-                    </div>
-
-                    <div className="flex justify-center mb-6 w-full">
-                        <GoogleLogin
-                            onSuccess={handleGoogleSuccess}
-                            onError={() => setError('Google Login Failed')}
-                            theme="filled_blue"
-                            shape="pill"
-                            width="300"
-                        />
-                    </div>
-
-                    <div className="relative mb-6">
-                        <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t border-border" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-                        </div>
                     </div>
 
                     {error && (

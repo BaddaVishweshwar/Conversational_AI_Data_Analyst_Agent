@@ -17,27 +17,61 @@ TEMPERATURE_CONFIG = {
     'error_correction': 0.2    # Precise debugging
 }
 
-# Context configuration for larger prompts
+# Context configuration optimized for 7B models
 CONTEXT_CONFIG = {
-    'num_ctx': 8192,      # Large context window
-    'num_predict': 2048   # Allow longer responses
+    'num_ctx': 4096,      # Context window (optimized for 7B models)
+    'num_predict': 1024   # Prediction length (balanced for efficiency)
 }
 
 class OllamaService:
     """
-    Ollama LLM Service.
-    Uses local Ollama models for all LLM operations.
+    Ollama LLM Service with HuggingFace fallback.
+    Routes to HuggingFace Inference API when USE_HUGGINGFACE is enabled.
+    Uses lazy initialization to ensure proper module loading.
     """
     
     def __init__(self):
+        self._hf_service = None
+        self._initialized = False
+        self.provider = None
+        self.model_name = None
+        self.client = None
+    
+    def _ensure_initialized(self):
+        """Lazy initialization - called on first use"""
+        if self._initialized:
+            return
+        
+        # Check if HuggingFace should be used
+        logger.info(f"🔍 Initializing LLM service: USE_HUGGINGFACE={settings.USE_HUGGINGFACE}, API_KEY={'set' if settings.HUGGINGFACE_API_KEY else 'not set'}")
+        
+        if settings.USE_HUGGINGFACE and settings.HUGGINGFACE_API_KEY:
+            try:
+                from .huggingface_service import huggingface_service
+                if huggingface_service:
+                    self.provider = "huggingface"
+                    self.model_name = settings.HUGGINGFACE_MODEL
+                    self._hf_service = huggingface_service
+                    logger.info(f"🤗 Using HuggingFace Provider: {self.model_name}")
+                    self._initialized = True
+                    return
+                else:
+                    logger.warning("HuggingFace service is None, falling back to Ollama")
+            except Exception as e:
+                logger.warning(f"Failed to initialize HuggingFace, falling back to Ollama: {e}")
+        
+        # Fallback to Ollama
         self.provider = "ollama"
         self.model_name = settings.OLLAMA_MODEL
         self.client = ollama.Client(host=settings.OLLAMA_HOST)
         logger.info(f"🦙 Using Ollama Provider: {self.model_name}")
-
+        self._initialized = True
 
     def check_availability(self) -> bool:
-        """Check if Ollama service is available"""
+        """Check if service is available"""
+        self._ensure_initialized()
+        if self._hf_service:
+            return self._hf_service.check_availability()
         return True
 
 
@@ -46,43 +80,81 @@ class OllamaService:
         prompt: str, 
         system_prompt: Optional[str] = None,
         json_mode: bool = False,
-        temperature: float = 0.7,
-        task_type: Optional[str] = None
+        temperature: float = None,
+        task_type: Optional[str] = None,
+        max_tokens: Optional[int] = None
     ) -> str:
         """
-        Generate LLM response using Ollama.
+        Generate LLM response using HuggingFace (if enabled) or Ollama.
         
         Args:
             prompt: User prompt
             system_prompt: System prompt (optional)
             json_mode: Whether to request JSON output
-            temperature: Temperature override (optional)
-            task_type: Task type for automatic temperature selection (planning, sql_generation, etc.)
+            temperature: Temperature override (optional, uses task_type or settings default)
+            task_type: Task type for automatic temperature selection
+            max_tokens: Maximum tokens to generate
         """
-        # Use task-specific temperature if provided
-        if task_type and task_type in TEMPERATURE_CONFIG:
-            temperature = TEMPERATURE_CONFIG[task_type]
-            logger.debug(f"Using task-specific temperature for {task_type}: {temperature}")
+        # Ensure service is initialized
+        self._ensure_initialized()
         
-        # Ollama Implementation with enhanced context
+        # Route to HuggingFace if enabled
+        if self._hf_service:
+            return self._hf_service.generate_response(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                json_mode=json_mode,
+                temperature=temperature or 0.7,
+                task_type=task_type,
+                max_tokens=max_tokens
+            )
+        
+        # Ollama implementation
+        # Determine temperature
+        if temperature is None:
+            if task_type and task_type in TEMPERATURE_CONFIG:
+                temperature = TEMPERATURE_CONFIG[task_type]
+            elif task_type == 'sql_generation':
+                temperature = settings.OLLAMA_TEMPERATURE_SQL
+            elif task_type == 'insight_generation':
+                temperature = settings.OLLAMA_TEMPERATURE_INSIGHTS
+            else:
+                temperature = settings.OLLAMA_TEMPERATURE_CHAT
+        
+        logger.debug(f"Using temperature {temperature} for task: {task_type}")
+        
+        # Ollama options with CamelAI-grade configuration
         options = {
             "temperature": temperature,
-            "num_ctx": CONTEXT_CONFIG['num_ctx'],
-            "num_predict": CONTEXT_CONFIG['num_predict']
+            "num_ctx": settings.OLLAMA_NUM_CTX,  # Use settings
+            "num_predict": max_tokens or 2048,
+            "num_gpu": settings.OLLAMA_NUM_GPU,
+            "num_thread": settings.OLLAMA_NUM_THREAD,
         }
+        
+        # Add stop sequences for cleaner output (especially for SQL)
+        if task_type == 'sql_generation':
+            options["stop"] = ["```", "\n\n\n", "Question:", "Example:"]
+        
         if json_mode:
             options["format"] = "json"
             
+        # Build full prompt
         full_prompt = prompt
         if system_prompt:
             full_prompt = f"System: {system_prompt}\n\nUser: {prompt}"
         
-        response = self.client.generate(
-            model=self.model_name,
-            prompt=full_prompt,
-            options=options
-        )
-        return response['response']
+        try:
+            response = self.client.generate(
+                model=self.model_name,
+                prompt=full_prompt,
+                options=options
+            )
+            return response['response']
+        except Exception as e:
+            logger.error(f"Ollama generation error: {e}")
+            raise e
+
 
     
     def generate(

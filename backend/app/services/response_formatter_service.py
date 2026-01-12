@@ -52,6 +52,22 @@ class ResponseFormatterService:
             Formatted response dictionary
         """
         try:
+            # Merge python_charts into visualizations
+            merged_visualizations = []
+            for i, viz in enumerate(visualizations):
+                merged_viz = viz.copy()
+                # If we have a corresponding python chart with base64 image, add it
+                if python_charts and i < len(python_charts):
+                    python_chart = python_charts[i]
+                    if python_chart.get('image'):
+                        # Extract base64 from data:image/png;base64,xxx format
+                        image_data = python_chart.get('image', '')
+                        if image_data.startswith('data:image/png;base64,'):
+                            merged_viz['image_base64'] = image_data.split(',')[1]
+                        else:
+                            merged_viz['image_base64'] = image_data
+                merged_visualizations.append(merged_viz)
+            
             response = {
                 # User question
                 'query': query,
@@ -81,10 +97,10 @@ class ResponseFormatterService:
                     'execution_time_ms': query_results.get('execution_time_ms', 0)
                 },
                 
-                # Visualizations
-                'visualizations': visualizations,
+                # Visualizations (merged with base64 images)
+                'visualizations': merged_visualizations,
                 'python_charts': python_charts or [],
-                'primary_visualization': 0 if visualizations else None,
+                'primary_visualization': 0 if merged_visualizations else None,
                 
                 # Insights and analysis
                 'insights': {
@@ -98,7 +114,7 @@ class ResponseFormatterService:
                 'metadata': {
                     'total_execution_time_ms': execution_time_ms,
                     'exploratory_queries_count': len(exploratory_results),
-                    'visualizations_count': len(visualizations),
+                    'visualizations_count': len(merged_visualizations),
                     'schema_columns': len(schema_analysis.get('columns', [])) if schema_analysis else 0
                 },
                 

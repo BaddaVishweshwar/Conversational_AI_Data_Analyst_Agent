@@ -57,7 +57,7 @@ class ExplorationAgent:
     """
     
     def __init__(self):
-        self.client = ollama_service.client
+        self.service = ollama_service
         self.model_name = ollama_service.model_name
         self.config = OLLAMA_CONFIGS["exploration"]
     
@@ -122,16 +122,16 @@ class ExplorationAgent:
             exploration_question=question
         )
         
-        # Generate SQL
-        response = self.client.generate(
-            model=self.model_name,
+        # Generate SQL via service
+        response_text = self.service.generate_response(
             prompt=prompt,
-            options=self.config
+            temperature=self.config.get("temperature", 0.3),
+            json_mode=True,
+            task_type="exploratory"
         )
         
         # Parse response
-        result_text = response['response'].strip()
-        result_data = self._extract_json(result_text)
+        result_data = self._extract_json(response_text)
         
         sql = result_data.get("sql", "SELECT COUNT(*) FROM data")
         explanation = result_data.get("explanation", "Basic query")

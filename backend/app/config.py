@@ -21,8 +21,23 @@ class Settings(BaseSettings):
     
     # Ollama
     OLLAMA_HOST: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "deepseek-r1:latest"  # Best reasoning model (strong instruction following)
+    OLLAMA_MODEL: str = "deepseek-r1:7b"  # Balanced model - good accuracy + laptop-friendly
     OLLAMA_TIMEOUT: int = 120
+    
+    # Ollama Advanced Configuration
+    OLLAMA_NUM_CTX: int = 4096  # Context window (optimized for 7B models)
+    OLLAMA_NUM_GPU: int = 1  # Use GPU if available
+    OLLAMA_NUM_THREAD: int = 8  # CPU threads
+    OLLAMA_TEMPERATURE_SQL: float = 0.1  # Deterministic for SQL
+    OLLAMA_TEMPERATURE_INSIGHTS: float = 0.3  # Slightly creative for insights
+    OLLAMA_TEMPERATURE_CHAT: float = 0.7  # Conversational
+    
+    # HuggingFace Configuration
+    HUGGINGFACE_API_KEY: Optional[str] = None
+    HUGGINGFACE_MODEL: str = "mistralai/Mistral-7B-Instruct-v0.2"
+    USE_HUGGINGFACE: bool = False
+    HUGGINGFACE_TIMEOUT: int = 60
+    HUGGINGFACE_MAX_TOKENS: int = 2048
     
     
     # Email Configuration
