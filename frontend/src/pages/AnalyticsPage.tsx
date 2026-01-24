@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Send, Sparkles, ChevronDown, ChevronRight, BarChart3, Table2, MapPin, FileText, Plus } from 'lucide-react';
-import { datasetsAPI } from '../lib/api';
+import { datasetsAPI, queriesAPI } from '../lib/api';
 import { conversationsAPI } from '../lib/conversationsAPI';
 import { Button } from '../components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -77,7 +77,7 @@ export default function AnalyticsPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!query.trim() || !currentConversation || loading) return;
+        if (!query.trim() || !selectedDataset || loading) return;
 
         const userMessage: Message = { role: 'user', content: query };
         setMessages(prev => [...prev, userMessage]);
@@ -86,22 +86,33 @@ export default function AnalyticsPage() {
         setLoading(true);
 
         try {
-            const response = await conversationsAPI.sendMessage(currentConversation.id, userQuery);
-            const messageData = response.data;
+            // Use working queries API instead of broken conversations API
+            const response = await queriesAPI.ask({
+                dataset_id: selectedDataset,
+                query: userQuery
+            });
+            const queryData = response.data;
+
+            if (queryData.status === 'error') {
+                throw new Error(queryData.error_message || 'Analysis failed');
+            }
 
             const assistantMessage: Message = {
                 role: 'assistant',
                 content: {
-                    directAnswer: messageData.content || "Analysis complete.",
-                    sql: messageData.query_data?.generated_sql,
-                    resultData: messageData.query_data?.result_data,
-                    columns: messageData.query_data?.columns,
-                    visualization: messageData.query_data?.visualization ? {
-                        type: messageData.query_data.visualization.type,
-                        xAxis: messageData.query_data.visualization.x_axis,
-                        yAxis: messageData.query_data.visualization.y_axis,
-                        data: messageData.query_data.result_data,
-                        columns: messageData.query_data.columns
+                    directAnswer: queryData.insights || "Analysis complete.",
+                    sql: queryData.generated_sql,
+                    resultData: queryData.result_data,
+                    columns: queryData.result_data && queryData.result_data.length > 0
+                        ? Object.keys(queryData.result_data[0])
+                        : [],
+                    pythonChart: queryData.python_chart, // Add chart image
+                    visualization: queryData.visualization_config ? {
+                        type: queryData.visualization_config.type,
+                        data: queryData.result_data,
+                        columns: queryData.result_data && queryData.result_data.length > 0
+                            ? Object.keys(queryData.result_data[0])
+                            : []
                     } : null,
                 }
             };
@@ -112,7 +123,7 @@ export default function AnalyticsPage() {
             setMessages(prev => [...prev, {
                 role: 'assistant',
                 content: {
-                    directAnswer: error.response?.data?.detail || 'Error processing query',
+                    directAnswer: error.message || error.response?.data?.detail || 'Error processing query',
                     error: true
                 }
             }]);
@@ -263,6 +274,63 @@ function MessageBubble({ message }: { message: Message }) {
     }
 
     const content = message.content;
+    const isError = content.error;
+
+    // Helper to render structured insights
+    const renderInsights = (insights: any) => {
+        if (typeof insights === 'string') {
+            return <ReactMarkdown>{insights}</ReactMarkdown>;
+        }
+
+        if (!insights || typeof insights !== 'object') return null;
+
+        return (
+            <div className="space-y-4">
+                {/* Direct Answer */}
+                {insights.direct_answer && (
+                    <div className="text-lg font-medium text-foreground">
+                        {insights.direct_answer}
+                    </div>
+                )}
+
+                {/* What data shows */}
+                {insights.what_data_shows && insights.what_data_shows.length > 0 && (
+                    <div>
+                        <h4 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2">Key Findings</h4>
+                        <ul className="list-disc pl-4 space-y-1 text-foreground/90">
+                            {insights.what_data_shows.map((item: string, i: number) => (
+                                <li key={i}>{item}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
+                {/* Why it happened */}
+                {insights.why_it_happened && insights.why_it_happened.length > 0 && (
+                    <div>
+                        <h4 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2 pt-2">Analysis</h4>
+                        <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
+                            {insights.why_it_happened.map((item: string, i: number) => (
+                                <li key={i}>{item}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
+                {/* Recommendations */}
+                {insights.business_implications && insights.business_implications.length > 0 && (
+                    <div className="bg-accent/5 rounded-lg p-3 mt-2 border border-accent/10">
+                        <h4 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2">Recommendations</h4>
+                        <ul className="list-disc pl-4 space-y-1 text-foreground">
+                            {insights.business_implications.map((item: string, i: number) => (
+                                <li key={i}>{item}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     return (
         <motion.div
@@ -271,17 +339,19 @@ function MessageBubble({ message }: { message: Message }) {
             className="mb-8"
         >
             <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
-                    <Sparkles className="w-4 h-4 text-accent" />
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isError ? 'bg-red-500/10' : 'bg-accent/10'}`}>
+                    {isError ? (
+                        <div className="text-red-500 font-bold">!</div>
+                    ) : (
+                        <Sparkles className="w-4 h-4 text-accent" />
+                    )}
                 </div>
 
                 <div className="flex-1 space-y-4">
                     {content.directAnswer && (
                         <div className="prose prose-invert max-w-none">
-                            <div className="text-foreground text-base leading-relaxed">
-                                <ReactMarkdown>
-                                    {content.directAnswer}
-                                </ReactMarkdown>
+                            <div className={`text-base leading-relaxed ${isError ? 'text-red-400' : 'text-foreground'}`}>
+                                {renderInsights(content.directAnswer)}
                             </div>
                         </div>
                     )}
@@ -317,15 +387,17 @@ function MessageBubble({ message }: { message: Message }) {
                                     <thead>
                                         <tr>
                                             {content.columns?.map((col: string) => (
-                                                <th key={col}>{col}</th>
+                                                <th key={col} className="px-4 py-2 text-left font-medium text-muted-foreground border-b border-border bg-muted/20">
+                                                    {col}
+                                                </th>
                                             ))}
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody className="divide-y divide-border/50">
                                         {content.resultData.slice(0, 100).map((row: any, i: number) => (
-                                            <tr key={i}>
+                                            <tr key={i} className="hover:bg-muted/10 transition-colors">
                                                 {content.columns?.map((col: string) => (
-                                                    <td key={col}>
+                                                    <td key={col} className="px-4 py-2 text-foreground/90 whitespace-nowrap">
                                                         {typeof row[col] === 'number' ? row[col].toLocaleString() : row[col]}
                                                     </td>
                                                 ))}
@@ -334,6 +406,12 @@ function MessageBubble({ message }: { message: Message }) {
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    )}
+
+                    {content.pythonChart && (
+                        <div className="border border-border rounded-lg p-4 bg-card">
+                            <img src={content.pythonChart} alt="Visualization" className="w-full h-auto" />
                         </div>
                     )}
 

@@ -91,8 +91,9 @@ class DataInterpretationAgent:
                     sorted_series = series.sort_values(ascending=False)
                     top_3_sum = sorted_series.head(3).sum()
                     pct = (top_3_sum / total) * 100
-                    if pct > 60 and len(series) > 5:
-                        contributors.append(f"Top 3 records account for {pct:.1f}% of total {col}")
+                    # Lower threshold to 50% for smaller datasets
+                    if pct > 50 and len(series) > 1:
+                        contributors.append(f"Top {min(3, len(series))} records account for {pct:.1f}% of total {col}")
 
             # 5. Determine Main Finding
             # Heuristic selection of the most "interesting" fact

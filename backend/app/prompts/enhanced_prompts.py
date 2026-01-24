@@ -419,9 +419,15 @@ def format_conversation_context_for_prompt(context: list) -> str:
     
     lines = ["Recent conversation:"]
     for i, entry in enumerate(context[-5:], 1):
-        lines.append(f"\n{i}. Q: {entry.get('question', 'N/A')}")
-        if 'key_findings' in entry:
-            lines.append(f"   A: {entry['key_findings']}")
+        q = entry.get('user_query') or entry.get('question') or 'N/A'
+        lines.append(f"\n{i}. Q: {q}")
+        
+        # Try multiple fields for answer/insights
+        a = entry.get('insights') or entry.get('key_findings') or entry.get('answer')
+        if a:
+            # If it's a long text, truncate?
+            if isinstance(a, list): a = "; ".join(a)
+            lines.append(f"   A: {str(a)[:200]}...")
     
     return '\n'.join(lines)
 

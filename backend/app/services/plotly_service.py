@@ -75,7 +75,8 @@ class PlotlyService:
     def _create_bar_chart(df: pd.DataFrame, config: Dict[str, Any]) -> go.Figure:
         """Create interactive bar chart."""
         x_col = config.get('x_axis', df.columns[0])
-        y_col = config.get('y_axis', df.columns[1] if len(df.columns) > 1 else df.columns[0])
+        y_col_raw = config.get('y_axis', df.columns[1] if len(df.columns) > 1 else df.columns[0])
+        y_col = y_col_raw[0] if isinstance(y_col_raw, list) and y_col_raw else y_col_raw if not isinstance(y_col_raw, list) else df.columns[1]
         title = config.get('title', 'Bar Chart')
         
         fig = go.Figure(data=[
@@ -103,7 +104,8 @@ class PlotlyService:
     def _create_line_chart(df: pd.DataFrame, config: Dict[str, Any]) -> go.Figure:
         """Create interactive line chart."""
         x_col = config.get('x_axis', df.columns[0])
-        y_col = config.get('y_axis', df.columns[1] if len(df.columns) > 1 else df.columns[0])
+        y_col_raw = config.get('y_axis', df.columns[1] if len(df.columns) > 1 else df.columns[0])
+        y_col = y_col_raw[0] if isinstance(y_col_raw, list) and y_col_raw else y_col_raw if not isinstance(y_col_raw, list) else df.columns[1]
         title = config.get('title', 'Line Chart')
         
         fig = go.Figure(data=[

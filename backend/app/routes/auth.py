@@ -54,7 +54,7 @@ class UserResponse(BaseModel):
 
 
 # Dependency to get current user
-async def get_current_user(
+def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ) -> User:

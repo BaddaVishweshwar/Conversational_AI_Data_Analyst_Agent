@@ -1,4 +1,5 @@
 import ollama
+import asyncio
 from typing import Dict, Any, Optional, List
 import json
 import re
@@ -32,50 +33,49 @@ class OllamaService:
     
     def __init__(self):
         self._hf_service = None
+        self._github_service = None
         self._initialized = False
-        self.provider = None
-        self.model_name = None
+        self.provider = "ollama"
+        self.model_name = settings.OLLAMA_MODEL
         self.client = None
-    
-    def _ensure_initialized(self):
-        """Lazy initialization - called on first use"""
-        if self._initialized:
-            return
-        
-        # Check if HuggingFace should be used
-        logger.info(f"🔍 Initializing LLM service: USE_HUGGINGFACE={settings.USE_HUGGINGFACE}, API_KEY={'set' if settings.HUGGINGFACE_API_KEY else 'not set'}")
-        
-        if settings.USE_HUGGINGFACE and settings.HUGGINGFACE_API_KEY:
+
+        # Priority 1: GitHub Models (GPT-4o) - Cloud
+        if settings.GITHUB_TOKEN:
             try:
-                from .huggingface_service import huggingface_service
-                if huggingface_service:
-                    self.provider = "huggingface"
-                    self.model_name = settings.HUGGINGFACE_MODEL
-                    self._hf_service = huggingface_service
-                    logger.info(f"🤗 Using HuggingFace Provider: {self.model_name}")
+                from .github_service import github_service
+                if github_service.check_availability():
+                    self.provider = "github"
+                    self.model_name = settings.GITHUB_MODEL
+                    self._github_service = github_service
+                    logger.info(f"🚀 Using GitHub Provider: {self.model_name}")
                     self._initialized = True
                     return
-                else:
-                    logger.warning("HuggingFace service is None, falling back to Ollama")
             except Exception as e:
-                logger.warning(f"Failed to initialize HuggingFace, falling back to Ollama: {e}")
+                logger.warning(f"Failed to initialize GitHub service: {e}")
         
-        # Fallback to Ollama
+        # Priority 3: Ollama (Local fallback)
         self.provider = "ollama"
         self.model_name = settings.OLLAMA_MODEL
         self.client = ollama.Client(host=settings.OLLAMA_HOST)
-        logger.info(f"🦙 Using Ollama Provider: {self.model_name}")
+        logger.info(f"🦙 Using Ollama Provider: {self.model_name} at http://localhost:11434")
         self._initialized = True
 
     def check_availability(self) -> bool:
         """Check if service is available"""
         self._ensure_initialized()
+        if self._github_service:
+            return self._github_service.check_availability()
         if self._hf_service:
             return self._hf_service.check_availability()
         return True
 
+    def _ensure_initialized(self):
+        """Lazy initialization - called on first use (Kept for compatibility)"""
+        if not self._initialized:
+             # This should have been handled in __init__, but just in case
+             pass
 
-    def generate_response(
+    async def generate_response(
         self, 
         prompt: str, 
         system_prompt: Optional[str] = None,
@@ -85,22 +85,27 @@ class OllamaService:
         max_tokens: Optional[int] = None
     ) -> str:
         """
-        Generate LLM response using HuggingFace (if enabled) or Ollama.
-        
-        Args:
-            prompt: User prompt
-            system_prompt: System prompt (optional)
-            json_mode: Whether to request JSON output
-            temperature: Temperature override (optional, uses task_type or settings default)
-            task_type: Task type for automatic temperature selection
-            max_tokens: Maximum tokens to generate
+        Generate LLM response using GitHub/HF (if enabled) or Ollama.
         """
         # Ensure service is initialized
         self._ensure_initialized()
         
+        # Route to GitHub If Enabled
+        if self._github_service and self.provider == "github":
+            return await asyncio.to_thread(
+                self._github_service.generate_response,
+                prompt=prompt,
+                system_prompt=system_prompt,
+                json_mode=json_mode,
+                temperature=temperature or 0.1,
+                max_tokens=max_tokens or 4096,
+                task_type=task_type
+            )
+        
         # Route to HuggingFace if enabled
         if self._hf_service:
-            return self._hf_service.generate_response(
+            return await asyncio.to_thread(
+                self._hf_service.generate_response,
                 prompt=prompt,
                 system_prompt=system_prompt,
                 json_mode=json_mode,
@@ -145,7 +150,9 @@ class OllamaService:
             full_prompt = f"System: {system_prompt}\n\nUser: {prompt}"
         
         try:
-            response = self.client.generate(
+            # Use to_thread for blocking Ollama client
+            response = await asyncio.to_thread(
+                self.client.generate,
                 model=self.model_name,
                 prompt=full_prompt,
                 options=options
@@ -157,7 +164,7 @@ class OllamaService:
 
 
     
-    def generate(
+    async def generate(
         self,
         prompt: str,
         system_prompt: Optional[str] = None,
@@ -169,7 +176,7 @@ class OllamaService:
         Alias for generate_response() for backward compatibility.
         Many agents call .generate() instead of .generate_response().
         """
-        return self.generate_response(
+        return await self.generate_response(
             prompt=prompt,
             system_prompt=system_prompt,
             json_mode=json_mode,
@@ -181,7 +188,7 @@ class OllamaService:
     # Legacy Methods (Refactored to use generic generate_response)
     # ------------------------------------------------------------------
 
-    def generate_analysis_plan(
+    async def generate_analysis_plan(
         self, 
         natural_query: str, 
         schema: Dict[str, Any],
@@ -304,7 +311,7 @@ ax.grid(axis='y', alpha=0.3)
 ```
 """
         try:
-            full_text = self.generate_response(prompt, system_prompt=system_prompt, temperature=0.1)
+            full_text = await self.generate_response(prompt, system_prompt=system_prompt, temperature=0.1)
             
             sql_query = self._extract_sql(full_text)
             python_code = self._extract_python(full_text)
@@ -318,7 +325,7 @@ ax.grid(axis='y', alpha=0.3)
         except Exception as e:
             return {"success": False, "sql": None, "python": None, "error": str(e)}
 
-    def generate_eda_report(
+    async def generate_eda_report(
         self,
         schema: Dict[str, Any],
         sample_data: list
@@ -353,7 +360,7 @@ PYTHON:
 ```
 """
         try:
-            full_text = self.generate_response(prompt, system_prompt=system_prompt, temperature=0.2)
+            full_text = await self.generate_response(prompt, system_prompt=system_prompt, temperature=0.2)
             
             report = full_text.split("PYTHON:")[0].replace("REPORT:", "").strip()
             python_code = self._extract_python(full_text)
@@ -367,7 +374,7 @@ PYTHON:
         except Exception as e:
             return {"success": False, "report": None, "python": None, "error": str(e)}
 
-    def generate_insights(
+    async def generate_insights(
         self,
         query: str,
         result_data: list,
@@ -407,7 +414,7 @@ Format Structure:
 - **<step>**: <reason>
 """
         try:
-             return self.generate_response(prompt, system_prompt=system_prompt, temperature=0.3)
+             return await self.generate_response(prompt, system_prompt=system_prompt, temperature=0.3)
         except Exception as e:
             return "Insights unavailable."
 
@@ -417,19 +424,33 @@ Format Structure:
     # We must patch this if using OpenAI
     # ------------------------------------------------------------------
     
-    def generate(self, model: str, prompt: str, options: dict = None) -> Dict[str, str]:
+    async def generate(self, model: str = None, prompt: str = None, options: dict = None, system_prompt: str = None, **kwargs) -> Dict[str, str]:
         """
         Compatibility method to mimic ollama.generate signature.
         Used by the new agent system (SchemaAnalyzer, QueryPlanner, etc.)
         """
-        temp = options.get("temperature", 0.7) if options else 0.7
+        # Handle defaults and aliases
+        model = model or self.model_name
+        prompt = prompt or kwargs.get('user_prompt')
+        
+        if not prompt:
+            raise ValueError("Prompt is required for generate()")
+
+        temp = options.get("temperature", 0.7) if options else kwargs.get('temperature', 0.7)
+        task_type = kwargs.get('task_type')
         
         # Check if json mode is requested via options or prompt
         json_mode = False
         if options and options.get("format") == "json":
             json_mode = True
         
-        response_text = self.generate_response(prompt, temperature=temp, json_mode=json_mode)
+        response_text = await self.generate_response(
+            prompt, 
+            system_prompt=system_prompt, 
+            temperature=temp, 
+            json_mode=json_mode,
+            task_type=task_type
+        )
         
         # Return in Ollama format: {'response': '...'}
         return {'response': response_text}

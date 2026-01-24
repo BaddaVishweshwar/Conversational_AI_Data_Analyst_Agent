@@ -55,12 +55,23 @@ def verify_token(token: str, token_type: str = "access") -> Optional[dict]:
 
 def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
     """Authenticate user with email and password"""
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        return None
-    if not verify_password(password, user.hashed_password):
-        return None
-    return user
+    print(f"DEBUG AUTH: Authenticating {email}")
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            print(f"DEBUG AUTH: User {email} NOT found in DB")
+            return None
+        
+        print(f"DEBUG AUTH: User found. ID: {user.id}, Hash len: {len(user.hashed_password) if user.hashed_password else 0}")
+        is_valid = verify_password(password, user.hashed_password)
+        print(f"DEBUG AUTH: Password valid? {is_valid}")
+        
+        if not is_valid:
+            return None
+        return user
+    except Exception as e:
+        print(f"DEBUG AUTH: Error: {e}")
+        raise e
 
 
 def create_user(db: Session, email: str, username: str, password: str) -> User:

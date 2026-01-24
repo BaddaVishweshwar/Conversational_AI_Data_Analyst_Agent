@@ -37,6 +37,10 @@ def extract_json_from_llm_response(text: str, fallback: Optional[Dict[str, Any]]
     original_text = text
     text = text.strip()
     
+    # Strategy 0: Strip <think>...</think> tags (Common in DeepSeek/R1 models)
+    if "<think>" in text:
+        text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
+
     # Strategy 1: Try direct JSON parse (best case)
     try:
         return json.loads(text)

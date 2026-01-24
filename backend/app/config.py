@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     OLLAMA_TEMPERATURE_SQL: float = 0.1  # Deterministic for SQL
     OLLAMA_TEMPERATURE_INSIGHTS: float = 0.3  # Slightly creative for insights
     OLLAMA_TEMPERATURE_CHAT: float = 0.7  # Conversational
+    OLLAMA_EMBEDDING_MODEL: str = "nomic-embed-text" # or mxbai-embed-large
+    USE_OLLAMA: bool = True
+
+    # GitHub Models (GPT-4o) Configuration
+    GITHUB_TOKEN: Optional[str] = None # Set to None to force fallback
+    GITHUB_MODEL: str = "gpt-4o"
+
     
     # HuggingFace Configuration
     HUGGINGFACE_API_KEY: Optional[str] = None
@@ -38,6 +45,24 @@ class Settings(BaseSettings):
     USE_HUGGINGFACE: bool = False
     HUGGINGFACE_TIMEOUT: int = 60
     HUGGINGFACE_MAX_TOKENS: int = 2048
+    
+    # Groq Configuration (Llama 3.1 70B - Fast & Accurate)
+    GROQ_API_KEY: Optional[str] = None
+    GROQ_MODEL: str = "llama-3.1-70b-versatile"
+    USE_GROQ: bool = False
+    GROQ_TIMEOUT: int = 30
+    GROQ_MAX_TOKENS: int = 2048
+    
+    # Gemini Configuration (Google Gemini - Best for SQL)
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "models/gemini-2.5-flash"  # Fast and accurate
+    USE_GEMINI: bool = False
+    GEMINI_TIMEOUT: int = 30
+    GEMINI_MAX_TOKENS: int = 2048
+    
+    # Clerk Authentication
+    CLERK_SECRET_KEY: Optional[str] = None
+    CLERK_PUBLISHABLE_KEY: Optional[str] = None
     
     
     # Email Configuration

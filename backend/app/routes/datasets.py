@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, Field
 from typing import List, Optional
 from pathlib import Path
 import shutil
@@ -30,12 +30,23 @@ class DatasetResponse(BaseModel):
     file_type: str
     row_count: Optional[int]
     column_count: Optional[int]
-    schema: Optional[dict]
+    table_schema: Optional[dict] = Field(None, alias="schema", validation_alias="schema", serialization_alias="schema")
     sample_data: Optional[list]
     status: Optional[str]
     error_message: Optional[str]
     created_at: datetime
     
+    @field_validator('table_schema', 'sample_data', mode='before')
+    @classmethod
+    def parse_json_fields(cls, v, info):
+        if isinstance(v, str):
+            try:
+                import json
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return {} if info.field_name == 'table_schema' else []
+        return v
+
     class Config:
         from_attributes = True
 

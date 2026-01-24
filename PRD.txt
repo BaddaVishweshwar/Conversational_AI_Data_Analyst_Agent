@@ -1,0 +1,608 @@
+# AI Data Analyst Enhancement PRD
+## Achieving CamelAI-Level Query Accuracy & Insights
+
+---
+
+## Executive Summary
+
+Your current implementation uses Ollama with a basic text-to-SQL approach, achieving approximately 30% query accuracy (industry baseline for direct LLM-to-SQL). CamelAI achieves 80%+ accuracy through sophisticated database mapping, multi-stage validation, and iterative refinement. This PRD outlines the architectural changes, techniques, and tech stack needed to reach production-grade accuracy.
+
+---
+
+## Current State Analysis
+
+### What You Have
+- FastAPI backend with Ollama integration
+- Basic natural language to SQL conversion
+- DuckDB for in-memory query execution
+- Simple pandas data processing
+- Frontend with basic visualization
+
+### Why Results Are Inaccurate
+1. **No Database Schema Understanding**: LLM receives raw schema without context
+2. **Single-Shot Generation**: No validation or correction loops
+3. **Missing Business Context**: No memory of user definitions or past queries
+4. **Limited Prompt Engineering**: Basic prompts without structured reasoning
+5. **No Query Optimization**: Direct execution without syntax/semantic validation
+6. **Weak Column Mapping**: Cannot intelligently link NL concepts to actual columns
+
+---
+
+## Architecture Redesign
+
+### 1. Database Mapping & Indexing System
+
+**Problem**: CamelAI reports 30% → 80% accuracy improvement through database mapping.
+
+**Solution**: Build a comprehensive database profiling system
+
+#### Components Needed
+
+**A. Schema Profiler**
+- **Purpose**: Extract and enrich database metadata
+- **Implementation**:
+  - Scan all tables, columns, data types, constraints
+  - Analyze column statistics (min, max, avg, distinct values, null count)
+  - Identify primary keys, foreign keys, indexes
+  - Detect relationships between tables (even without explicit FKs)
+  - Sample representative data from each column (top 10 values, distributions)
+
+**B. Semantic Annotator**
+- **Purpose**: Add business context to technical schema
+- **Implementation**:
+  - Generate natural language descriptions for tables/columns
+  - Use LLM to infer column purposes (e.g., "user_id: Unique identifier for customers")
+  - Create synonym mappings (revenue = sales = income)
+  - Build value examples dictionary (e.g., country column → "US", "Canada", "UK")
+  - Store common aggregation patterns (SUM revenue, COUNT users)
+
+**C. Query Pattern Library**
+- **Purpose**: Learn from past queries and build reference examples
+- **Implementation**:
+  - Store successfully executed queries with their NL descriptions
+  - Use vector embeddings to enable semantic search
+  - Build a knowledge base of business definitions
+  - Track user corrections and feedback
+  - Implement query versioning (user teaches "active user" once, system remembers)
+
+**Tech Stack**:
+- **Vector Database**: Pinecone, Weaviate, or Qdrant for semantic search
+- **Embedding Model**: sentence-transformers (all-MiniLM-L6-v2) or OpenAI embeddings
+- **Metadata Store**: PostgreSQL JSONB columns or MongoDB
+- **Profiling**: sqlalchemy-utils, pandas-profiling
+
+---
+
+### 2. Multi-Stage Query Generation Pipeline
+
+**Problem**: Single-shot generation has no error correction
+
+**Solution**: Implement iterative refinement with validation
+
+#### Pipeline Stages
+
+**Stage 1: Intent Analysis & Schema Linking**
+```
+Input: "What are our top 5 products by revenue this month?"
+
+Process:
+1. Extract entities (products, revenue, month)
+2. Map to schema (products → product_name, revenue → total_sales)
+3. Identify required tables (orders, products)
+4. Determine joins needed (orders.product_id = products.id)
+5. Detect time filters (WHERE order_date >= DATE_TRUNC('month', CURRENT_DATE))
+```
+
+**Stage 2: Query Skeleton Generation**
+```
+Generate high-level query structure:
+- SELECT clause targets
+- FROM clause tables
+- JOIN conditions
+- WHERE filters
+- GROUP BY aggregations
+- ORDER BY sorting
+- LIMIT constraints
+```
+
+**Stage 3: SQL Generation with RAG**
+```
+Use RAG to inject relevant context:
+1. Search vector DB for similar queries
+2. Retrieve example queries that match intent
+3. Include table/column annotations
+4. Add business rules (e.g., "active = last_login > 30 days")
+4. Generate SQL with enriched context
+```
+
+**Stage 4: Syntax Validation**
+```
+Before execution:
+1. Parse SQL with sqlparse library
+2. Check for syntax errors
+3. Validate table/column names exist
+4. Verify data types match operations
+5. If errors found → re-prompt with error message
+```
+
+**Stage 5: Dry Run Execution**
+```
+Execute with LIMIT 1 to catch runtime errors:
+1. Check for join errors
+2. Validate aggregation logic
+3. Test filter conditions
+4. If fails → extract error, re-generate
+```
+
+**Stage 6: Semantic Validation**
+```
+Verify query makes sense:
+1. Check result row count (0 rows might indicate bad filter)
+2. Validate aggregation results (negative revenue = bug)
+3. Compare with similar historical queries
+4. If suspicious → ask user for confirmation
+```
+
+**Tech Stack**:
+- **SQL Parsing**: sqlparse, sqlglot
+- **Validation**: DuckDB EXPLAIN for query plans
+- **Error Analysis**: Custom error extraction + LLM reprompting
+
+---
+
+### 3. Advanced Prompt Engineering
+
+**Problem**: Basic prompts don't provide enough structure
+
+**Solution**: Use Chain-of-Thought and structured reasoning
+
+#### Prompt Template Structure
+
+**System Prompt Components**:
+```
+1. Role Definition: "You are an expert SQL analyst"
+2. Task Decomposition: Break complex questions into steps
+3. Schema Context: Full table/column descriptions
+4. Business Rules: User-defined logic
+5. Example Queries: Similar past queries from vector DB
+6. Output Format: JSON with SQL + reasoning
+7. Error Handling: Instructions for self-correction
+```
+
+**Chain-of-Thought Prompt Pattern**:
+```
+Given question: {user_question}
+
+Step 1: Identify what the user wants to know
+Step 2: List required data points
+Step 3: Map data points to schema
+Step 4: Determine necessary joins
+Step 5: Identify filters and aggregations
+Step 6: Generate SQL query
+Step 7: Explain your reasoning
+
+Output JSON:
+{
+  "reasoning": "step-by-step explanation",
+  "tables_used": ["table1", "table2"],
+  "sql_query": "SELECT ...",
+  "confidence": 0.85
+}
+```
+
+**Self-Consistency Approach**:
+```
+Generate 3 different queries for same question
+Execute all three
+Compare results
+If 2+ agree → high confidence
+If all different → ask user for clarification
+```
+
+**Tech Stack**:
+- **Prompting Framework**: LangChain or custom
+- **Template Engine**: Jinja2 for dynamic prompts
+- **Reasoning**: Add explicit CoT steps to all prompts
+
+---
+
+### 4. Improved LLM Selection & Configuration
+
+**Problem**: Local Ollama models may lack SQL expertise
+
+**Solution**: Use stronger models or fine-tune existing ones
+
+#### Model Recommendations
+
+**Tier 1 (Best Accuracy)**:
+- **GPT-4 Turbo**: Best text-to-SQL, expensive
+- **Claude 3.5 Sonnet**: Excellent SQL, good reasoning
+- **Gemini 1.5 Pro**: Strong SQL, long context window
+- Use for production or fallback
+
+**Tier 2 (Good Balance)**:
+- **Llama 3.1 70B**: Via Groq API (fast, cheap)
+- **Mixtral 8x22B**: Via Together AI
+- **DeepSeek-V2**: Strong coder model
+- Use for primary queries
+
+**Tier 3 (Local/Free)**:
+- **CodeLlama 70B**: Specialized for code
+- **SQLCoder 70B**: Fine-tuned specifically for SQL
+- **Llama 3.1 8B**: Current choice, upgrade to 70B
+- Use Ollama or vLLM for local hosting
+
+**Fine-Tuning Strategy**:
+```
+1. Collect 500-1000 (question, SQL) pairs
+2. Format as instruction dataset
+3. Fine-tune CodeLlama or Llama on your schema
+4. Improves accuracy 20-30% for domain-specific queries
+```
+
+**Tech Stack**:
+- **APIs**: OpenRouter (aggregates all models)
+- **Local Hosting**: vLLM or Text Generation Inference
+- **Fine-tuning**: Unsloth, Axolotl, or Hugging Face Transformers
+
+---
+
+### 5. Intelligent Visualization Selection
+
+**Problem**: Generic chart selection doesn't match query intent
+
+**Solution**: AI-driven visualization recommendation
+
+#### Implementation
+
+**A. Query Result Analysis**:
+```python
+Analyze result structure:
+- Number of columns (1-2 = simple, 3+ = complex)
+- Data types (temporal, categorical, numerical)
+- Cardinality (few categories vs many)
+- Aggregation level (raw vs grouped)
+```
+
+**B. Visualization Rules Engine**:
+```
+Time series data → Line chart
+Categorical comparisons → Bar chart
+Part-to-whole → Pie/donut chart
+Distributions → Histogram
+Correlations → Scatter plot
+Hierarchical → Treemap
+Geographic → Map (if lat/long detected)
+Multi-metric → Combo chart
+```
+
+**C. AI Recommendation**:
+```
+Prompt LLM with:
+- Original question
+- SQL query
+- Result preview (first 5 rows)
+- Available chart types
+
+LLM suggests:
+{
+  "chart_type": "line",
+  "x_axis": "order_date",
+  "y_axis": "total_revenue",
+  "reasoning": "Time series data showing trend"
+}
+```
+
+**Tech Stack**:
+- **Charting**: Plotly (more interactive) vs Recharts (current)
+- **Dynamic Generation**: Generate React component code
+- **Multiple Options**: Show 2-3 chart types, let user choose
+
+---
+
+### 6. Conversational Memory & Context
+
+**Problem**: Each query is isolated, no learning
+
+**Solution**: Implement persistent memory system
+
+#### Components
+
+**A. Session Memory**:
+- Track current conversation history
+- Maintain context across multiple queries
+- Remember table/column selections
+- Store intermediate results
+
+**B. User Preference Memory**:
+```
+Store per-user:
+- Frequently queried tables
+- Common filters (e.g., "only US data")
+- Business definitions (KPIs, metrics)
+- Preferred visualization styles
+- Query templates
+```
+
+**C. Feedback Loop**:
+```
+After each query:
+1. Ask user: "Was this helpful?" (thumbs up/down)
+2. If down: "What was wrong?"
+3. Store correction
+4. Update query pattern library
+5. Use for future similar queries
+```
+
+**Tech Stack**:
+- **Short-term**: Redis for session state
+- **Long-term**: PostgreSQL for user preferences
+- **Vector Store**: For semantic memory retrieval
+
+---
+
+### 7. Insights Generation Engine
+
+**Problem**: Just showing data, not explaining it
+
+**Solution**: AI-powered insight extraction
+
+#### Implementation
+
+**A. Statistical Analysis**:
+```python
+Automatically compute:
+- Trends (up/down, rate of change)
+- Outliers (values >2 std dev)
+- Correlations between metrics
+- Seasonality patterns
+- Anomalies
+```
+
+**B. Insight Prompting**:
+```
+After query execution:
+
+Prompt: "Given this data analysis:
+Question: {original_question}
+SQL: {generated_sql}
+Results: {top_10_rows}
+Statistics: {summary_stats}
+
+Provide 3-5 key insights in business language:
+1. What's the main finding?
+2. Any surprising patterns?
+3. What should user investigate next?
+4. Recommendations
+"
+```
+
+**C. Insight Types**:
+- **Descriptive**: "Sales increased 15% this month"
+- **Diagnostic**: "The spike is driven by Product X"
+- **Predictive**: "Based on trend, expect $50K next month"
+- **Prescriptive**: "Consider restocking Product X"
+
+**Tech Stack**:
+- **Statistical**: scipy, statsmodels
+- **ML Predictions**: Prophet, scikit-learn for simple forecasts
+- **Narration**: LLM to write human-friendly insights
+
+---
+
+## Implementation Roadmap
+
+### Phase 1: Foundation (Weeks 1-2)
+- [ ] Implement database profiling system
+- [ ] Add schema annotations to prompt
+- [ ] Set up vector database for query patterns
+- [ ] Upgrade to better LLM (Llama 3.1 70B or API-based)
+
+**Expected Impact**: 30% → 50% accuracy
+
+### Phase 2: Validation Pipeline (Weeks 3-4)
+- [ ] Build multi-stage SQL generation
+- [ ] Add syntax validation with sqlparse
+- [ ] Implement dry-run execution
+- [ ] Create error feedback loop
+
+**Expected Impact**: 50% → 65% accuracy
+
+### Phase 3: Advanced Reasoning (Weeks 5-6)
+- [ ] Implement Chain-of-Thought prompting
+- [ ] Add self-consistency (multiple generations)
+- [ ] Build query similarity search
+- [ ] Create business rule storage
+
+**Expected Impact**: 65% → 75% accuracy
+
+### Phase 4: Polish & Learning (Weeks 7-8)
+- [ ] Add conversational memory
+- [ ] Implement feedback loop
+- [ ] Build insight generation
+- [ ] Enhance visualizations
+- [ ] Fine-tune model on collected data
+
+**Expected Impact**: 75% → 80%+ accuracy
+
+---
+
+## Technical Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     User Interface                       │
+│  (React + TypeScript - Keep Current Frontend)           │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│                  API Gateway (FastAPI)                   │
+│  - Request routing                                       │
+│  - Authentication                                        │
+│  - Rate limiting                                         │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│              Query Processing Pipeline                   │
+│                                                          │
+│  ┌──────────────────────────────────────────┐          │
+│  │ 1. Intent Analyzer                        │          │
+│  │    - NER for entities                     │          │
+│  │    - Schema linking                       │          │
+│  └──────────────┬───────────────────────────┘          │
+│                 │                                        │
+│  ┌──────────────▼───────────────────────────┐          │
+│  │ 2. Query Generator (RAG-Enhanced)        │          │
+│  │    - Retrieve similar queries             │          │
+│  │    - Inject schema context                │          │
+│  │    - Generate SQL with CoT                │          │
+│  └──────────────┬───────────────────────────┘          │
+│                 │                                        │
+│  ┌──────────────▼───────────────────────────┐          │
+│  │ 3. Validator                              │          │
+│  │    - Syntax check                         │          │
+│  │    - Dry run                              │          │
+│  │    - Semantic validation                  │          │
+│  └──────────────┬───────────────────────────┘          │
+│                 │                                        │
+│                 │ ◄─── Error? Re-prompt                │
+│                 │                                        │
+│  ┌──────────────▼───────────────────────────┐          │
+│  │ 4. Executor (DuckDB)                     │          │
+│  └──────────────┬───────────────────────────┘          │
+│                 │                                        │
+│  ┌──────────────▼───────────────────────────┐          │
+│  │ 5. Insight Engine                         │          │
+│  │    - Statistical analysis                 │          │
+│  │    - Pattern detection                    │          │
+│  │    - AI narration                         │          │
+│  └──────────────────────────────────────────┘          │
+└─────────────────────────────────────────────────────────┘
+                     │
+        ┌────────────┼────────────┐
+        │            │            │
+        ▼            ▼            ▼
+   ┌────────┐  ┌─────────┐  ┌─────────┐
+   │  LLM   │  │ Vector  │  │Database │
+   │Service │  │   DB    │  │Metadata │
+   │        │  │(Queries)│  │  Store  │
+   └────────┘  └─────────┘  └─────────┘
+```
+
+---
+
+## Key Techniques Summary
+
+### 1. **Database Mapping** (Highest Impact)
+Replicate CamelAI's approach: comprehensive schema profiling, semantic annotations, value distributions
+
+### 2. **RAG for Queries**
+Store and search past successful queries, inject as examples in prompts
+
+### 3. **Multi-Stage Validation**
+Never run first-generated SQL blindly - validate, dry-run, correct
+
+### 4. **Chain-of-Thought**
+Force LLM to reason step-by-step instead of jumping to SQL
+
+### 5. **Self-Consistency**
+Generate multiple queries, pick best one (or ask user if disagreement)
+
+### 6. **Error Feedback Loop**
+When query fails, extract error, re-prompt with error context
+
+### 7. **Business Context Memory**
+Let users define metrics once, remember forever
+
+### 8. **Iterative Refinement**
+Allow users to correct queries, learn from corrections
+
+---
+
+## Recommended Tech Stack Changes
+
+### Keep
+- ✅ FastAPI (excellent choice)
+- ✅ React + TypeScript frontend
+- ✅ DuckDB (perfect for in-memory analytics)
+- ✅ Docker deployment
+
+### Upgrade
+- 🔄 **LLM**: Ollama Llama 8B → Llama 3.1 70B OR API-based (Claude/GPT)
+- 🔄 **Prompting**: Basic → Chain-of-Thought structured
+- 🔄 **Visualization**: Recharts → Plotly (more interactive)
+
+### Add
+- ➕ **Vector DB**: Pinecone/Weaviate for query patterns
+- ➕ **SQL Parser**: sqlparse or sqlglot for validation
+- ➕ **Embedding Model**: sentence-transformers for semantic search
+- ➕ **Profiler**: pandas-profiling or custom profiler
+- ➕ **Monitoring**: Track query success rate, execution time
+
+---
+
+## Metrics to Track
+
+1. **Query Success Rate**: % of queries that execute without error
+2. **User Satisfaction**: Thumbs up/down feedback
+3. **Correction Rate**: % of queries user has to manually fix
+4. **Response Time**: End-to-end latency
+5. **Context Reuse**: How often RAG finds relevant examples
+
+**Target KPIs** (After 8 weeks):
+- Query accuracy: 80%+
+- User satisfaction: 85%+
+- Avg response time: <5 seconds
+- Zero syntax errors (caught by validation)
+
+---
+
+## Cost Considerations
+
+### Option 1: Fully Open Source (Current Path)
+- **LLM**: Llama 3.1 70B via Ollama (requires 80GB RAM GPU)
+- **Vector DB**: Weaviate self-hosted
+- **Total Monthly Cost**: ~$200-500 for GPU server
+
+### Option 2: Hybrid (Recommended)
+- **LLM**: Groq API for Llama 70B ($0.50/1M tokens)
+- **Vector DB**: Pinecone free tier (1M vectors)
+- **Total Monthly Cost**: ~$50-100 for 100K queries/month
+
+### Option 3: Premium
+- **LLM**: Claude 3.5 Sonnet via Anthropic
+- **Vector DB**: Pinecone paid
+- **Total Monthly Cost**: ~$300-500 for high accuracy
+
+---
+
+## Next Steps
+
+1. **Immediate**: Implement database profiling (1 week)
+2. **Short-term**: Add validation pipeline (2 weeks)
+3. **Medium-term**: Build RAG system (3 weeks)
+4. **Long-term**: Fine-tune custom model (ongoing)
+
+Focus on **database mapping and validation** first - these give the biggest accuracy gains with least effort.
+
+---
+
+## References & Resources
+
+- **CamelAI Database Mapping**: Their blog post explains 30%→80% improvement
+- **Google's Text-to-SQL Guide**: Best practices from Cloud SQL team
+- **LangChain SQL Agents**: Reference implementation patterns
+- **Spider Benchmark**: Standard dataset for text-to-SQL evaluation
+- **SQLCoder**: Open-source SQL-specialized model
+
+---
+
+**Questions?** Focus implementation on:
+1. What gives biggest accuracy gain? → Database mapping
+2. What's cheapest to implement? → Validation pipeline
+3. What's most scalable? → RAG + vector DB
+4. What's most user-visible? → Insight generation
+
+Start with profiling and validation - you'll see immediate improvements.

@@ -156,7 +156,11 @@ async def ask_question(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Ask a natural language question about a dataset using enhanced multi-agent pipeline (V3)"""
+    """
+    Ask a natural language question about a dataset using V4 Pipeline (PandasAI Integration).
+    Promoted to default endpoint to support "user-friendly" mode with exact chart matching.
+    """
+    logger.info(f"DEBUG: Entering ask_question with query: {query_request.query} (routed to V4)")
     
     start_time = time.time()
     
@@ -182,69 +186,14 @@ async def ask_question(
     db.refresh(query)
     
     try:
-        # Prepare execution context
-        df = None
-        connection = None
-        
-        if dataset.connection_id:
-            from ..models import DataConnection
-            connection = db.query(DataConnection).filter(DataConnection.id == dataset.connection_id).first()
-        else:
-            df = data_service.parse_file(dataset.file_path, dataset.file_type)
-        
-        # Check for ambiguous questions (CamelAI feature)
-        ambiguity_check = await clarification_service.check_for_ambiguity(
-            question=query_request.query,
-            schema=dataset.schema
-        )
-        
-        # If ambiguous, return clarification request instead of executing
-        if ambiguity_check.get('is_ambiguous', False):
-            query.status = "needs_clarification"
-            query.error_message = None
-            query.insights = json.dumps({
-                "needs_clarification": True,
-                "question": ambiguity_check.get('clarification_needed', 'Please provide more details'),
-                "options": ambiguity_check.get('options', []),
-                "reason": ambiguity_check.get('reason', '')
-            })
-            db.commit()
-            db.refresh(query)
-            logger.info(f"Query needs clarification: {ambiguity_check.get('clarification_needed')}")
-            return query
-        
-        # Get conversation context (last 3 exchanges)
-        context = None
-        if query_request.session_id:
-            # Get formatted context for prompts
-            context_str = conversation_manager.get_context(
-                session_id=query_request.session_id,
-                last_n=3
-            )
-            
-            # Get raw history for structured context
-            history = conversation_manager.get_history(
-                session_id=query_request.session_id,
-                last_n=3
-            )
-            
-            context = {
-                "history": history,
-                "dataset_id": dataset.id,
-                "formatted_context": context_str
-            }
-            
-            logger.info(f"Using conversation context with {len(history)} previous exchanges")
-        
-        # Execute CamelAI-grade multi-agent analytics pipeline (V4)
-        logger.info(f"🚀 Using V4 CamelAI-grade pipeline for query: {query_request.query}")
+        # Execute V4 multi-agent analytics pipeline
         analysis_response = await analytics_service_v4.analyze_query(
             user_question=query_request.query,
             dataset_id=dataset.id,
             db=db
         )
         
-        # Check if analysis succeeded (V4 format)
+        # Check if analysis succeeded
         if not analysis_response.get('success', False):
             query.status = "error"
             query.error_message = analysis_response.get('error', 'Analysis failed')
@@ -253,21 +202,36 @@ async def ask_question(
             db.refresh(query)
             return query
         
-        # Extract results from V4 response
+        # Extract results
         sql_query = analysis_response.get('sql', '')
         result_data = analysis_response.get('data', [])
-        row_count = analysis_response.get('row_count', 0)
         insights = analysis_response.get('insights', '')
+        # Keep insights as-is (dict or string) - don't convert to JSON string
+        # Frontend handles both formats properly
+            
         visualization = analysis_response.get('visualization', {})
-        metadata = analysis_response.get('metadata', {})
         
-        # Prepare visualization config for frontend
-        viz_config = {
-            "type": visualization.get('chart_type', 'table'),
-            "reason": visualization.get('reason', ''),
-            "data": result_data,
-            "columns": list(result_data[0].keys()) if result_data else []
-        }
+        # V4 'visualization' is a dict like {'chart_type': 'image_base64', ...}
+        # Frontend expects 'visualization_config' with specific structure
+        # We need to map it if it's the image type
+        
+        viz_config = {}
+        if visualization:
+             if visualization.get('chart_type') == 'image_base64':
+                 # Pass image_base64 directly - frontend expects it at top level
+                 viz_config = {
+                     "chart_type": "image_base64",
+                     "image_base64": visualization.get('image_base64'),
+                     "title": visualization.get('title', 'Generated Chart')
+                 }
+             else:
+                 # Standard mapping
+                 viz_config = {
+                     "type": visualization.get('chart_type', 'table'),
+                     "reason": visualization.get('reason', ''),
+                     "data": result_data,
+                     "columns": list(result_data[0].keys()) if result_data else []
+                 }
         
         # Update query with results
         execution_time = analysis_response.get('execution_time', int((time.time() - start_time) * 1000))
@@ -279,58 +243,25 @@ async def ask_question(
         query.status = "success"
         query.intent = analysis_response.get('intent', 'DESCRIPTIVE')
         
-        # Store V4 metadata
-        query.analysis_plan = {
-            "interpretation": analysis_response.get('interpretation', ''),
-            "sql_attempts": metadata.get('sql_attempts', 1),
-            "columns_retrieved": metadata.get('rag_context_summary', {}).get('columns_retrieved', 0),
-            "similar_queries_found": metadata.get('rag_context_summary', {}).get('similar_queries_found', 0),
-            "reasoning": metadata.get('reasoning', '')
-        }
-        query.schema_analysis = {
-            "query_analysis": metadata.get('query_analysis', {}),
-            "rag_summary": metadata.get('rag_context_summary', {})
-        }
-        query.reasoning_steps = [
-            f"Intent: {analysis_response.get('intent', 'DESCRIPTIVE')}",
-            f"Interpretation: {analysis_response.get('interpretation', '')}",
-            f"SQL attempts: {metadata.get('sql_attempts', 1)}",
-            f"RAG columns retrieved: {metadata.get('rag_context_summary', {}).get('columns_retrieved', 0)}",
-            f"Similar queries found: {metadata.get('rag_context_summary', {}).get('similar_queries_found', 0)}"
-        ]
-        
         db.commit()
         db.refresh(query)
         
-        # Save to knowledge base for RAG
-        from ..services.rag_service import rag_service
-        try:
-            await rag_service.store_successful_query(
-                dataset_id=dataset.id,
-                natural_language=query_request.query,
-                sql_query=sql_query,
-                intent=analysis_response.get('intent', 'DESCRIPTIVE'),
-                db=db
-            )
-            logger.info("✅ Stored query in RAG knowledge base")
-        except Exception as e:
-            logger.warning(f"Failed to store query in RAG: {str(e)}")
-        
-        # Add to conversation history for context-aware follow-ups
+        # Add to conversation history
         if query_request.session_id:
-            conversation_manager.add_exchange(
+             conversation_manager.add_exchange(
                 session_id=query_request.session_id,
                 user_query=query_request.query,
                 sql_query=sql_query,
-                results=result_data[:5],  # Store sample
+                results=result_data[:5],
                 insights=insights,
                 visualizations=[visualization]
             )
-            logger.info(f"Added exchange to conversation history")
         
+        logger.info(f"V4 query completed successfully in {execution_time}ms")
         return query
         
     except Exception as e:
+        logger.error(f"Error in V4 pipeline: {str(e)}", exc_info=True)
         query.status = "error"
         query.error_message = str(e)
         db.commit()

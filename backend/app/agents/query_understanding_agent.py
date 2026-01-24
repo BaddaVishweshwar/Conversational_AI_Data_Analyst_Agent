@@ -225,24 +225,57 @@ Respond with ONLY the JSON."""
         Returns:
             Dictionary with intent and analysis (V4 format)
         """
-        # For now, return a simple fallback response
-        # This allows the V4 pipeline to continue working
-        return {
-            "intent": "DESCRIPTIVE",
-            "confidence": 0.7,
-            "entities": {
+        try:
+            # Handle list input (defensive coding)
+            if isinstance(schema_context, list):
+                logger.warning(f"analyze_query received list schema: {type(schema_context)}")
+                schema_context = {"columns": schema_context}
+
+            # Extract columns from schema_context
+            columns = schema_context.get('columns', schema_context.get('relevant_columns', []))
+            
+            # Build entities from columns
+            entities = {
                 "metrics": [],
                 "dimensions": [],
                 "time_period": None,
                 "filters": []
-            },
-            "answerable": True,
-            "required_columns": [],
-            "ambiguities": [],
-            "clarification_needed": False,
-            "interpretation": user_question,
-            "original_question": user_question
-        }
+            }
+            
+            # Extract column names
+            column_names = []
+            if isinstance(columns, list):
+                for col in columns:
+                    if isinstance(col, dict):
+                        column_names.append(col.get('column_name', col.get('name', '')))
+                    elif isinstance(col, str):
+                        column_names.append(col)
+            
+            return {
+                "intent": "DESCRIPTIVE",
+                "confidence": 0.7,
+                "entities": entities,
+                "answerable": True,
+                "required_columns": column_names[:5],  # Limit to 5
+                "ambiguities": [],
+                "clarification_needed": False,
+                "interpretation": user_question,
+                "original_question": user_question
+            }
+        except Exception as e:
+            logger.error(f"Error in analyze_query: {e}")
+            # Return minimal fallback
+            return {
+                "intent": "DESCRIPTIVE",
+                "confidence": 0.5,
+                "entities": {"metrics": [], "dimensions": [], "time_period": None, "filters": []},
+                "answerable": True,
+                "required_columns": [],
+                "ambiguities": [],
+                "clarification_needed": False,
+                "interpretation": user_question,
+                "original_question": user_question
+            }
 
 
 # Singleton instance

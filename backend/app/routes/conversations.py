@@ -14,7 +14,7 @@ from ..database import get_db
 from ..models import User, Dataset, Conversation, Message
 from ..routes.auth import get_current_user
 from ..services.conversation_service import conversation_service
-from ..services.analytics_service_v2 import analytics_service_v2
+from ..services.analytics_service_v3 import analytics_service_v3
 from ..services.data_service import data_service
 from ..services.response_formatter import response_formatter
 from ..agents.query_resolver_agent import query_resolver
@@ -243,7 +243,7 @@ async def send_message(
         # Step 3: Query database
         processing_steps.append({
             "status": "querying",
-            "message": "Querying Database...",
+            "message": "Analyzing with AnalyticsServiceV3...",
             "data": None
         })
         
@@ -259,12 +259,13 @@ async def send_message(
         else:
             df = data_service.parse_file(dataset.file_path, dataset.file_type)
         
-        # Execute analytics pipeline
-        analysis_response = analytics_service_v2.analyze(
+        # Execute analytics pipeline V3
+        analysis_response = await analytics_service_v3.analyze(
             query=resolved['resolved_query'],
             dataset=dataset,
             df=df,
-            connection=connection
+            connection=connection,
+            context=context # Pass conversation context
         )
         
         # Step 4: Show generated SQL
@@ -272,17 +273,18 @@ async def send_message(
             "status": "generating_sql",
             "message": "Generated SQL",
             "data": {
-                "sql": analysis_response.analysis_plan.sql_query
+                "sql": analysis_response.get('sql', '')
             }
         })
         
         # Check if analysis succeeded
-        if not analysis_response.execution_result.success:
+        if not analysis_response.get('success', False):
             # Add error step
+            error_msg = analysis_response.get('error', 'Unknown error')
             processing_steps.append({
                 "status": "error",
-                "message": f"Analysis failed: {analysis_response.execution_result.error}",
-                "data": {"error": analysis_response.execution_result.error}
+                "message": f"Analysis failed: {error_msg}",
+                "data": {"error": error_msg}
             })
             
             # Error response
@@ -290,11 +292,10 @@ async def send_message(
                 db=db,
                 conversation_id=conversation_id,
                 role='assistant',
-                content=f"I encountered an error: {analysis_response.execution_result.error}\n\nI tried to self-correct but couldn't resolve the issue.",
+                content=f"I encountered an error: {error_msg}",
                 query_data={
-                    "error": analysis_response.execution_result.error,
-                    "generated_sql": analysis_response.analysis_plan.sql_query,
-                    # Fallback for visualization to prevent UI crashes if it expects something
+                    "error": error_msg,
+                    "generated_sql": analysis_response.get('sql', ''),
                     "visualizations": [],
                     "visualization": None
                 },
@@ -302,90 +303,83 @@ async def send_message(
             )
             return MessageResponse.from_orm(error_message)
         
-        # Step 5: Format response
+        # Step 5: Format response (V3 includes insights, so skip independent formatting)
         processing_steps.append({
             "status": "formatting",
             "message": "Formatting response...",
             "data": None
         })
         
-        # Generate natural language response
-        natural_response = response_formatter.format_response(
-            query=message.content,
-            result_data=analysis_response.execution_result.data,
-            columns=analysis_response.execution_result.columns,
-            intent=analysis_response.intent.intent.value
-        )
-        
         # Step 6: Complete
         processing_steps.append({
             "status": "complete",
             "message": "Analysis complete",
             "data": {
-                "row_count": analysis_response.execution_result.row_count,
-                "execution_time_ms": analysis_response.execution_result.execution_time_ms
+                "row_count": analysis_response.get('row_count', 0),
+                "execution_time_ms": analysis_response.get('execution_time', 0)
             }
         })
         
         # Prepare query data for storage
         visualizations_data = []
-        if analysis_response.visualization:
-            # Handle list vs single object (just in case of mixed usage during migration)
-            viz_list = analysis_response.visualization if isinstance(analysis_response.visualization, list) else [analysis_response.visualization]
-            for viz in viz_list:
-                visualizations_data.append({
-                    "chart_type": viz.chart_type.value,
-                    "x_axis": viz.x_axis,
-                    "y_axis": viz.y_axis,
-                    "title": viz.title,
-                    "description": viz.description
-                })
+        # V3 returns 'visualization' as a list or dict
+        raw_viz = analysis_response.get('visualization', [])
+        viz_list = raw_viz if isinstance(raw_viz, list) else ([raw_viz] if raw_viz else [])
+        
+        for viz in viz_list:
+            visualizations_data.append({
+                "chart_type": viz.get('type', 'table'),
+                "x_axis": viz.get('config', {}).get('x_axis'),
+                "y_axis": viz.get('config', {}).get('y_axis'), # potentially list
+                "title": viz.get('config', {}).get('title'),
+                "description": viz.get('reason'),
+                "image_base64": viz.get('image_base64') # V3 Vibe Check support
+            })
 
-        query_data = {
-            "generated_sql": analysis_response.analysis_plan.sql_query,
-            "result_data": analysis_response.execution_result.data,
-            "columns": analysis_response.execution_result.columns,
-            "visualizations": visualizations_data, # New Plural Field
-            # Keep legacy single field for backward compat if needed, or just let frontend handle new field
-            "visualization": visualizations_data[0] if visualizations_data else None, 
-            "intent": {
-                "intent": analysis_response.intent.intent.value,
-                "confidence": analysis_response.intent.confidence
-            },
-            "interpretation": clean_interpretation(analysis_response.interpretation),
-            "insights": {
-                "direct_answer": analysis_response.insights.direct_answer,
-                "what_data_shows": analysis_response.insights.what_data_shows,
-                "why_it_happened": analysis_response.insights.why_it_happened,
-                "business_implications": analysis_response.insights.business_implications,
-                "confidence": analysis_response.insights.confidence
-            }
+        # Extract Insights (V3 structure -> Frontend structure)
+        # V3 Insights: {'summary': '...', 'key_findings': [], 'detailed_analysis': '', 'recommendations': ''}
+        # Frontend expects: { direct_answer, what_data_shows, ... }
+        v3_insights = analysis_response.get('insights', {})
+        
+        formatted_insights = {
+            "direct_answer": v3_insights.get('summary', 'Here are the results.'),
+            "what_data_shows": v3_insights.get('key_findings', []),
+            "why_it_happened": v3_insights.get('detailed_analysis', '').split('\n\n') if v3_insights.get('detailed_analysis') else [],
+            "business_implications": v3_insights.get('recommendations', []) if isinstance(v3_insights.get('recommendations'), list) else [v3_insights.get('recommendations')] if v3_insights.get('recommendations') else [],
+            "confidence": 1.0
         }
         
-        # Merge high-level steps with granular reasoning steps
-        # We start with basic buckets, but we can also just append the granular string steps
-        # The frontend now accepts strings in processing_steps.
-        final_steps = processing_steps.copy()
-        if analysis_response.reasoning_steps:
-             for step in analysis_response.reasoning_steps:
-                 if isinstance(step, str):
-                     final_steps.append({
-                         "status": "reasoning",
-                         "message": step,
-                         "data": None
-                     })
-                 else:
-                     # Already a dict (unlikely based on error, but safe)
-                     final_steps.append(step)
+        # Interpretation layer
+        interpretation = {
+             "main_finding": v3_insights.get('summary', ''),
+             "outliers": [],
+             "trends": [],
+             "top_contributors": [],
+             "correlations": []
+        }
+
+        query_data = {
+            "generated_sql": analysis_response.get('sql', ''),
+            "result_data": analysis_response.get('data', []),
+            "columns": list(analysis_response.get('data', [])[0].keys()) if analysis_response.get('data') else [],
+            "visualizations": visualizations_data,
+            "visualization": visualizations_data[0] if visualizations_data else None, 
+            "intent": {
+                "intent": analysis_response.get('intent', 'DESCRIPTIVE'),
+                "confidence": 1.0
+            },
+            "interpretation": interpretation,
+            "insights": formatted_insights
+        }
         
         # Add assistant message
         assistant_message = conversation_service.add_message(
             db=db,
             conversation_id=conversation_id,
             role='assistant',
-            content=analysis_response.insights.direct_answer, # Use direct answer as main content
+            content=formatted_insights['direct_answer'],
             query_data=query_data,
-            processing_steps=final_steps
+            processing_steps=processing_steps
         )
         
         return MessageResponse.from_orm(assistant_message)

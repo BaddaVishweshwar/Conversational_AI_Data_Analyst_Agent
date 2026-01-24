@@ -40,15 +40,34 @@ class IntentClassifierAgent:
             IntentResult with intent type, confidence, and requirements
         """
         
+        # Extract column names from schema context
+        if isinstance(schema, list):
+             logger.warning(f"IntentClassifier received list schema: {type(schema)}")
+             schema = {"columns": schema}
+
+        column_names = []
+        if isinstance(schema, dict):
+            # Schema is from RAG service with 'columns' or 'relevant_columns' key
+            columns = schema.get('columns', schema.get('relevant_columns', []))
+            if isinstance(columns, list):
+                for col in columns:
+                    if isinstance(col, dict):
+                        column_names.append(col.get('column_name', col.get('name', '')))
+                    elif isinstance(col, str):
+                        column_names.append(col)
+            else:
+                # Fallback: schema might be a flat dict of column_name: type
+                column_names = list(schema.keys())
+        
         # Check for datetime columns to inform intent
         has_datetime = any('date' in col.lower() or 'time' in col.lower() 
-                          for col in schema.keys())
+                          for col in column_names if col)
         
         prompt = f"""You are an intent classification expert. Classify this query into ONE category.
 
 QUERY: "{query}"
 
-DATASET COLUMNS: {', '.join(schema.keys())}
+DATASET COLUMNS: {', '.join(column_names) if column_names else 'No columns available'}
 HAS TIME DIMENSION: {has_datetime}
 
 INTENT CATEGORIES:
@@ -60,6 +79,7 @@ INTENT CATEGORIES:
 6. PRESCRIPTIVE - Recommends actions (e.g., "what should we do", "recommend", "suggest")
 7. DISTRIBUTION - Shows spread/frequency (e.g., "distribution of ages", "histogram", "frequency")
 8. CORRELATION - Shows relationship (e.g., "relationship between price and sales", "correlation", "scatter")
+9. AGGREGATION - Totals, averages, counts (e.g., "total revenue", "average price", "count customers")
 
 CLASSIFICATION RULES:
 - If query mentions "trend", "over time", "monthly", "growth" → TREND
@@ -69,6 +89,7 @@ CLASSIFICATION RULES:
 - If query asks "recommend", "should", "suggest" → PRESCRIPTIVE
 - If query asks "distribution", "spread", "histogram", "frequency" → DISTRIBUTION
 - If query asks "relationship", "correlation", "related to" → CORRELATION
+- If query asks "total", "sum", "average", "count", "mean" → AGGREGATION
 - Otherwise → DESCRIPTIVE
 
 OUTPUT FORMAT (JSON):
@@ -150,6 +171,9 @@ Respond with ONLY the JSON, no other text."""
             time_required = False
         elif any(word in query_lower for word in ['relationship', 'correlation', 'associate', 'scatter']):
             intent = IntentType.CORRELATION
+            time_required = False
+        elif any(word in query_lower for word in ['average', 'mean', 'sum', 'total', 'count', 'max', 'min', 'agg']):
+            intent = IntentType.AGGREGATION
             time_required = False
         else:
             intent = IntentType.DESCRIPTIVE

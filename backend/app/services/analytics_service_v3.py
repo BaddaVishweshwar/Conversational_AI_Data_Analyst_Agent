@@ -23,6 +23,7 @@ from ..services.response_formatter_service import response_formatter_service
 from ..agents.enhanced_exploration_agent import enhanced_exploration_agent
 from ..services.sql_validator_service import sql_validator
 from ..services.data_quality_service import data_quality_service
+from ..services.self_consistency_service import self_consistency_service
 from ..prompts.camelai_prompts import (
     MASTER_SYSTEM_PROMPT,
     SQL_GENERATION_PROMPT,
@@ -32,9 +33,18 @@ from ..prompts.camelai_prompts import (
     format_conversation_history
 )
 from ..prompts.enhanced_prompts import (
-    format_exploratory_findings_for_prompt
+    PLANNING_PROMPT_TEMPLATE,
+    format_exploratory_findings_for_prompt,
+    format_schema_for_prompt,
+    format_sample_data_for_prompt,
+    format_column_statistics_for_prompt,
+    format_conversation_context_for_prompt
 )
 
+
+from ..agents.insight_generator_agent import insight_generator
+from ..agents.data_interpretation_agent import data_interpretation_agent
+from ..agents import ExecutionResult, IntentResult, InterpretationResult, Insights, IntentType
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +108,7 @@ class AnalyticsServiceV3:
             
             # Step 1: Context Enrichment
             logger.info("Step 1/9: Enriching schema context...")
-            enriched_schema = await self._get_enriched_schema(dataset.id, df, dataset.table_name)
+            enriched_schema = await self._get_enriched_schema(dataset.id, df, dataset.name)
             
             # Step 2: Planning Phase
             logger.info("Step 2/8: Creating analysis plan...")
@@ -131,7 +141,9 @@ class AnalyticsServiceV3:
                 query=query,
                 enriched_schema=enriched_schema,
                 exploratory_results=exploratory_results,
-                planning_result=planning_result
+                planning_result=planning_result,
+                dataset_id=dataset.id,
+                df=df
             )
             
             main_sql = sql_result.get('sql', '')
@@ -146,13 +158,14 @@ class AnalyticsServiceV3:
                 question=query,
                 intent_type=planning_result.get('intent', 'analysis'),
                 schema=enriched_schema,
+                df=df,
                 max_attempts=2
             )
             
             if validation_result['is_valid']:
                 logger.info(f"✅ SQL validation passed (attempts: {validation_result['attempts']})")
             else:
-                logger.warning(f"⚠️ SQL validation issues: {validation_result['final_validation'].get('issues', [])}")
+                logger.warning(f"⚠️ SQL validation issues: {validation_result.get('final_validation', {}).get('issues', [])}")
             
             # Use corrected SQL if available
             main_sql = validation_result['sql']
@@ -204,7 +217,8 @@ class AnalyticsServiceV3:
                 query=query,
                 execution_result=execution_result,
                 exploratory_results=exploratory_results,
-                enriched_schema=enriched_schema
+                enriched_schema=enriched_schema,
+                planning_result=planning_result
             )
             
             logger.info(f"✅ Insights generated")
@@ -329,7 +343,9 @@ class AnalyticsServiceV3:
         query: str,
         enriched_schema: Dict[str, Any],
         exploratory_results: List[Dict[str, Any]],
-        planning_result: Dict[str, Any]
+        planning_result: Dict[str, Any],
+        dataset_id: int,
+        df: pd.DataFrame
     ) -> Dict[str, Any]:
         """Generate main SQL query informed by exploration."""
         try:
@@ -356,7 +372,25 @@ class AnalyticsServiceV3:
                 user_question=query
             )
             
-            # Generate with LLM using MASTER_SYSTEM_PROMPT
+            # Generate with Self-Consistency
+            sc_result = await self_consistency_service.generate_with_self_consistency(
+                question=query,
+                schema=enriched_schema,
+                query_analysis=planning_result,
+                dataset_id=dataset_id,
+                df=df
+            )
+            
+            if sc_result['success']:
+                return {
+                    'sql': sc_result['sql'],
+                    'explanation': sc_result.get('reasoning', "Generated via self-consistency"),
+                    'complexity': 'medium', # default
+                    'is_sc': True
+                }
+            
+            # Fallback to direct generation if SC fails
+            logger.warning(f"Self-consistency failed: {sc_result.get('error')}. Falling back to direct generation.")
             response = ollama_service.generate_response(
                 prompt=prompt,
                 system_prompt=MASTER_SYSTEM_PROMPT,
@@ -537,37 +571,63 @@ class AnalyticsServiceV3:
         query: str,
         execution_result: Dict[str, Any],
         exploratory_results: List[Dict[str, Any]],
-        enriched_schema: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Generate executive-level insights."""
+        enriched_schema: Dict[str, Any],
+        planning_result: Dict[str, Any]
+    ) -> Insights:
+        """Generate grounded executive insights using multi-agent approach."""
         try:
-            # Format results for prompt
-            data = execution_result.get('data', [])
-            results_json = json.dumps(data[:20], indent=2, default=str)  # Limit to 20 rows
-            
-            # Create prompt using CamelAI template
-            prompt = INSIGHT_PROMPT.format(
-                results_json=results_json,
-                question=query
+            # 1. Convert to typed models
+            exec_res = ExecutionResult(
+                success=execution_result.get('success', False),
+                data=execution_result.get('data', []),
+                columns=execution_result.get('columns', []),
+                row_count=execution_result.get('row_count', 0),
+                metrics=execution_result.get('metrics', {}),
+                execution_time_ms=execution_result.get('execution_time_ms', 0),
+                error=execution_result.get('error')
             )
             
-            # Generate with LLM using MASTER_SYSTEM_PROMPT
-            response = ollama_service.generate_response(
-                prompt=prompt,
-                system_prompt=MASTER_SYSTEM_PROMPT,
-                json_mode=True,
-                task_type='insight_generation'
+            intent_str = planning_result.get('intent', 'DESCRIPTIVE').upper()
+            # Map string to enum safely
+            try:
+                intent_enum = IntentType[intent_str]
+            except KeyError:
+                intent_enum = IntentType.DESCRIPTIVE
+                
+            intent_res = IntentResult(
+                intent=intent_enum,
+                confidence=1.0
             )
             
-            # Parse JSON
-            result = json.loads(response)
-            return result
+            # 2. Run Data Interpretation (Statistical Analysis)
+            logger.info("  Running Data Interpretation Agent...")
+            interpretation = data_interpretation_agent.interpret(exec_res, intent_res)
+            
+            # 3. Run Insight Generator (Narrative Generation)
+            logger.info("  Running Insight Generator Agent...")
+            insights = insight_generator.generate(
+                query=query,
+                execution_result=exec_res,
+                intent=intent_res,
+                interpretation=interpretation,
+                exploration_findings=exploratory_results,
+                conversation_history=[] # TODO: Add history
+            )
+            
+            return {
+                "summary": insights.direct_answer,
+                "key_findings": insights.what_data_shows,
+                "detailed_analysis": "\n\n".join(insights.why_it_happened),
+                "recommendations": insights.business_implications
+            } # Backward compatibility adapter
             
         except Exception as e:
-            logger.error(f"Error generating insights: {str(e)}")
+            logger.error(f"Error generating insights: {str(e)}", exc_info=True)
             return {
-                'summary': 'Analysis completed successfully.',
-                'insights': ['Data retrieved and processed.']
+                'summary': 'Analysis completed.',
+                'key_findings': ['Data retrieved successfully.'],
+                'detailed_analysis': 'Refer to the data table for details.',
+                'recommendations': []
             }
     
     def _create_error_response(self, query: str, error: str) -> Dict[str, Any]:

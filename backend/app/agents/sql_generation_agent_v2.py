@@ -34,7 +34,8 @@ class SQLGenerationAgent:
         user_question: str,
         schema_context: Dict[str, Any],
         query_analysis: Dict[str, Any],
-        similar_queries: List[Dict[str, Any]] = None
+        similar_queries: List[Dict[str, Any]] = None,
+        temperature: Optional[float] = None
     ) -> Dict[str, Any]:
         """
         Generate SQL query for the user's question.
@@ -59,9 +60,9 @@ class SQLGenerationAgent:
             
             # Generate SQL using Claude
             if settings.ENABLE_CHAIN_OF_THOUGHT:
-                sql_response = await self._generate_with_cot(context)
+                sql_response = await self._generate_with_cot(context, temperature)
             else:
-                sql_response = await self._generate_direct(context)
+                sql_response = await self._generate_direct(context, temperature)
             
             # Extract and clean SQL
             sql = self._extract_sql(sql_response)
@@ -161,7 +162,7 @@ class SQLGenerationAgent:
         
         return "\n".join(context_parts)
     
-    async def _generate_with_cot(self, context: str) -> str:
+    async def _generate_with_cot(self, context: str, temperature: Optional[float] = None) -> str:
         """Generate SQL with chain-of-thought reasoning and few-shot examples"""
         # Extract intent from context for few-shot selection
         intent = "DESCRIPTIVE"  # default
@@ -213,14 +214,16 @@ Then provide ONLY the SQL query:
         response = await ollama_service.generate(
             system_prompt="You are an expert SQL analyst. Generate accurate DuckDB SQL queries.",
             user_prompt=cot_prompt,
-            temperature=0.1,  # CamelAI-grade: very deterministic
+            temperature=temperature or 0.1,  # Use provided or default deterministic
             task_type='sql_generation',
             max_tokens=2000
         )
         
+        if isinstance(response, dict) and 'response' in response:
+             return response['response']
         return response
     
-    async def _generate_direct(self, context: str) -> str:
+    async def _generate_direct(self, context: str, temperature: Optional[float] = None) -> str:
         """Generate SQL directly with few-shot examples but without explicit CoT"""
         # Extract intent from context
         intent = "DESCRIPTIVE"
@@ -246,11 +249,13 @@ Now generate SQL for:
         response = await ollama_service.generate(
             system_prompt="You are an expert SQL analyst.",
             user_prompt=full_prompt,
-            temperature=0.1,  # CamelAI-grade: deterministic
+            temperature=temperature or 0.1,  # Use provided or default deterministic
             task_type='sql_generation',
             max_tokens=1500
         )
         
+        if isinstance(response, dict) and 'response' in response:
+             return response['response']
         return response
 
     

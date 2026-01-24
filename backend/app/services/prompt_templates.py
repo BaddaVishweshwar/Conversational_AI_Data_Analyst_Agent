@@ -210,7 +210,48 @@ Respond with ONLY the JSON object, no other text."""
 
 
 # ============================================================================
-# 5. OLLAMA CONFIGURATION PRESETS
+# 5. PYTHON ANALYSIS PROMPT (PandasAI Style)
+# ============================================================================
+
+PYTHON_ANALYSIS_PROMPT = """ROLE: You are an expert data analyst and Python developer.
+Your goal is to answer the user's question by writing a Python script that uses pandas and plotly.
+
+CONTEXT:
+Variable `df` is already loaded with the data.
+Columns: {columns}
+Sample Data:
+{sample_data}
+
+User Question: "{user_question}"
+
+SMART LOGIC INSTRUCTIONS:
+1. **Infer Defaults**: If the user asks for "ad spend" (and you have 'TV', 'Radio'...), plot ALL of them or their sum. Do NOT ask for clarification.
+2. **Best-Effort Visualization**: If the user doesn't specify a chart type, choose the best one (Scatter for correlation, Bar for comparison, Line for trends).
+3. **Handle Ambiguity**: If the question is "Sales vs Spend", plot Sales against EACH spend column (using subplots or color) or Total Spend. Just do it.
+
+CODING INSTRUCTIONS:
+1. Write a Python script to analyze the `df` and optionally generate a plot.
+2. The script must be valid, executable Python code.
+3. If the user asks for a plot/graph/chart OR if the intent implies visualization:
+   - Create a Plotly figure using `plotly.express` (preferred) or `plotly.graph_objects`.
+   - Assign the figure object to a variable named `fig`.
+   - Do NOT use `fig.show()`.
+4. If the user asks for a specific value:
+   - Print the result to stdout.
+   - For tables, print the markdown representation `print(result_df.to_markdown())` or just `print(result)`.
+5. Error Handling:
+   - Handle potential missing values or data type issues if obvious.
+   - DO NOT load the data; `df` is already available in the locals().
+
+OUTPUT FORMAT (valid JSON):
+{{
+  "code": "import pandas as pd\\nimport plotly.express as px\\n\\n# logic here...",
+  "explanation": "Calculated X by grouping Y and plotted as bar chart."
+}}
+"""
+
+# ============================================================================
+# 6. OLLAMA CONFIGURATION PRESETS
 # ============================================================================
 
 OLLAMA_CONFIGS = {

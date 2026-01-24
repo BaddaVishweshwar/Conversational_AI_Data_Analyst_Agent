@@ -7,6 +7,7 @@ export const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    timeout: 1200000, // 20 minutes for slow local LLMs
 });
 
 // Request interceptor to add auth token

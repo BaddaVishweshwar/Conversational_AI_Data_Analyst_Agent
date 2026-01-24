@@ -131,5 +131,63 @@ class VectorService:
         except Exception as e:
             logger.warning(f"Could not delete collection {collection_name}: {e}")
 
+    def add_vector(self, collection_name: str, vector_id: str, embedding: List[float], metadata: Dict[str, Any]):
+        """
+        Generic method to add a single vector to a collection.
+        Used by QueryPatternService.
+        """
+        try:
+            collection = self.get_collection(collection_name)
+            collection.upsert(
+                ids=[vector_id],
+                embeddings=[embedding],
+                metadatas=[metadata]
+            )
+            # logger.info(f"✅ Stored vector {vector_id} in {collection_name}")
+        except Exception as e:
+            logger.error(f"❌ Failed to add vector to {collection_name}: {e}")
+            raise e
+
+    def search(self, collection_name: str, query_embedding: List[float], top_k: int = 5) -> List[Dict[str, Any]]:
+        """
+        Generic method to search a collection using an embedding.
+        Used by QueryPatternService.
+        """
+        try:
+            # Check if collection exists first to avoid error
+            try:
+                collection = self.client.get_collection(
+                    name=collection_name, 
+                    embedding_function=self.embedding_fn
+                )
+            except ValueError:
+                logger.warning(f"Collection {collection_name} not found during search.")
+                return []
+
+            results = collection.query(
+                query_embeddings=[query_embedding],
+                n_results=top_k,
+                include=['metadatas', 'documents', 'distances']
+            )
+
+            # Parse results into a clean list of dicts
+            parsed_results = []
+            if results and results['ids'] and len(results['ids']) > 0:
+                # Iterate through the first query's results
+                for i in range(len(results['ids'][0])):
+                    item = {
+                        "id": results['ids'][0][i],
+                        "metadata": results['metadatas'][0][i] if results['metadatas'] else {},
+                        "document": results['documents'][0][i] if results['documents'] else "",
+                        "distance": results['distances'][0][i] if results['distances'] else 0.0
+                    }
+                    parsed_results.append(item)
+            
+            return parsed_results
+
+        except Exception as e:
+            logger.error(f"❌ Search failed for {collection_name}: {e}")
+            return []
+
 # Singleton instance
 vector_service = VectorService(persist_directory=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "vector_db"))

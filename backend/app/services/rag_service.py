@@ -18,6 +18,7 @@ from sqlalchemy import and_
 from ..models import DatasetSchema, ColumnProfile, QueryTemplate, SemanticMapping
 from .embedding_service import embedding_service
 import json
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ class RAGService:
         """
         try:
             # Generate embedding for the question
-            question_embedding = embedding_service.embed_query(user_question)
+            question_embedding = await asyncio.to_thread(embedding_service.embed_query, user_question)
             
             if not question_embedding:
                 # Fallback: return all schema if embedding fails
@@ -110,12 +111,17 @@ class RAGService:
                 }
             
             # Enhance relevant columns with profile data
-            for col in relevant_columns:
                 if col["column_name"] in profile_map:
                     col["profile"] = profile_map[col["column_name"]]
             
+            # If no relevant columns found (e.g. missing embeddings), fallback to full schema
+            if not relevant_columns:
+                logger.warning(f"No relevant columns found via RAG for dataset {dataset_id}. Falling back to full schema.")
+                return await self._get_full_schema(dataset_id, db)
+            
             return {
                 "relevant_columns": relevant_columns,
+                "columns": relevant_columns,  # Add for backward compatibility
                 "total_columns": len(schema_entries),
                 "retrieval_method": "semantic_search"
             }
@@ -146,7 +152,7 @@ class RAGService:
         """
         try:
             # Generate embedding for the question
-            question_embedding = embedding_service.embed_query(user_question)
+            question_embedding = await asyncio.to_thread(embedding_service.embed_query, user_question)
             
             if not question_embedding:
                 # Fallback: return most recent successful queries
@@ -213,7 +219,7 @@ class RAGService:
         """
         try:
             # Generate embedding for the question
-            question_embedding = embedding_service.embed_query(user_question)
+            question_embedding = await asyncio.to_thread(embedding_service.embed_query, user_question)
             
             if not question_embedding:
                 # Fallback: return all definitions
@@ -309,6 +315,7 @@ class RAGService:
         
         return {
             "relevant_columns": columns,
+            "columns": columns,  # Add for backward compatibility
             "total_columns": len(columns),
             "retrieval_method": "full_schema"
         }

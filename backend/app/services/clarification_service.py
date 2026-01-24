@@ -5,9 +5,12 @@ Detects ambiguous queries and generates clarifying questions.
 """
 
 import logging
-from typing import Dict, Any, List, Optional
+import re
+import asyncio
 import json
+from typing import Dict, Any, List, Optional
 from ..services.ollama_service import ollama_service
+from ..utils.json_extractor import extract_json_from_llm_response
 
 logger = logging.getLogger(__name__)
 
@@ -20,30 +23,25 @@ USER QUESTION: "{question}"
 SCHEMA:
 {schema_info}
 
-COMMON AMBIGUITIES:
-1. Multiple date columns (which to use for time range?)
-2. Multiple similar columns (which metric to analyze?)
-3. Unclear time range ("recent" = last week? month? year?)
-4. Vague terms ("top" = top 5? 10? 20?)
-5. Missing context (compare to what? filter by what?)
+INSTRUCTIONS:
+You are a helpful data analyst helper. Your goal is to avoid annoying the user with questions if a reasonable default assumption can be made.
 
-DECISION CRITERIA:
-- If question is clear and specific → NOT ambiguous
-- If question has vague terms or multiple interpretations → AMBIGUOUS
+CRITICAL RULES For "AMBIGUOUS":
+1.  ONLY return "is_ambiguous": true if it is IMPOSSIBLE to answer the question without more info.
+2.  DO NOT ask for a time range if none is specified. DEFAULT TO "ALL TIME" or "OVERALL".
+3.  DO NOT ask which columns to use if the user mentioned specific columns (e.g. "Sales vs Newspaper").
+4.  DO NOT ask for "top 5 or 10" if vague. DEFAULT TO TOP 10.
+5.  DO NOT ask for "sum or average". DEFAULT TO SUM for metrics, COUNT for categories.
 
-EXAMPLES:
+EXAMPLES of NOT AMBIGUOUS (Apply Defaults):
+- "Show me sales" -> Default to Total Sales over all time.
+- "Compare TV vs Sales" -> Default to Scatter plot / Correlation of TV vs Sales.
+- "Sales by Radio" -> Default to Sales vs Radio spend.
+- "Top products" -> Default to Top 10 products by count/sales.
 
-Clear: "Show me sales for the last 30 days"
-→ NOT ambiguous (specific time range)
-
-Ambiguous: "Show me recent sales"
-→ AMBIGUOUS (what is "recent"?)
-
-Clear: "Top 10 products by revenue"
-→ NOT ambiguous (specific number and metric)
-
-Ambiguous: "Show me top products"
-→ AMBIGUOUS (how many? by what metric?)
+EXAMPLES of AMBIGUOUS (Must Ask):
+- "Compare sales vs spend" -> (If schema has TV, Radio, Newspaper spend columns, we don't know which ONE or ALL).
+- "How did we do?" -> (Too vague, no metrics specified).
 
 YOUR TURN:
 Analyze the question above.
@@ -59,7 +57,7 @@ Return JSON:
 If NOT ambiguous, return:
 {{
   "is_ambiguous": false,
-  "reason": "question is clear and specific"
+  "reason": "Using defaults: All time, relevant columns."
 }}
 """
 
@@ -93,14 +91,18 @@ class ClarificationService:
             )
             
             # Generate with LLM
-            response = ollama_service.generate_response(
+            # Wrap synchronous call in to_thread
+            response = await asyncio.to_thread(
+                ollama_service.generate_response,
                 prompt=prompt,
                 json_mode=True,
-                temperature=0.3  # Lower temperature for consistent detection
+                temperature=0.3
             )
             
             # Parse result
-            result = json.loads(response)
+            result = extract_json_from_llm_response(response)
+            if not isinstance(result, dict):
+                raise ValueError(f"Ambiguity check returned non-dict: {type(result)}")
             
             logger.info(f"Ambiguity check: {result.get('is_ambiguous', False)}")
             

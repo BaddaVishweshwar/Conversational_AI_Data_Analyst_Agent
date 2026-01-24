@@ -9,6 +9,7 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
     LineChart, Line, PieChart as RePieChart, Pie, Cell
 } from 'recharts';
+import Plot from 'react-plotly.js';
 
 interface ProcessingStep {
     status: string;
@@ -52,7 +53,7 @@ interface ConversationMessageV2Props {
             top_contributors: string[];
             correlations: string[];
         };
-        insights?: {
+        insights?: string | {
             direct_answer: string;
             what_data_shows: string[];
             why_it_happened: string[];
@@ -78,10 +79,27 @@ export default function ConversationMessageV2({
     const [showSteps, setShowSteps] = useState(false);
 
     const isUser = role === 'user';
-    const hasInsights = queryData?.insights;
+
+    // Debug logging
+    if (!isUser && queryData) {
+        console.log('ConversationMessageV2 - queryData:', {
+            hasInsights: !!queryData.insights,
+            insightsType: typeof queryData.insights,
+            insights: queryData.insights,
+            visualization: queryData.visualization,
+            visualizations: queryData.visualizations
+        });
+    }
+
+    // Check if insights exist and are not empty
+    const hasInsights = queryData?.insights && queryData.insights !== '';
     // Determine which visualizations to use
-    const activeVisualizations = queryData?.visualizations || (queryData?.visualization ? [queryData.visualization] : []);
-    const hasViz = activeVisualizations.length > 0 && activeVisualizations[0].chart_type !== 'table';
+    const activeVisualizations = queryData?.visualizations ||
+        (queryData?.visualization ? [queryData.visualization] : []);
+    const hasViz = activeVisualizations.length > 0 && activeVisualizations[0]?.chart_type !== 'table';
+
+
+
 
     // Helper to render specific charts
     const renderChart = (vizConfig: any) => {
@@ -96,6 +114,27 @@ export default function ConversationMessageV2({
                     />
                 </div>
             );
+        }
+
+        // PRIORITY: Plotly JSON (Interactive)
+        if (vizConfig.plotly_json) {
+            try {
+                const figure = JSON.parse(vizConfig.plotly_json);
+                return (
+                    <div className="w-full h-[400px]">
+                        <Plot
+                            data={figure.data}
+                            layout={{ ...figure.layout, autosize: true, margin: { l: 40, r: 20, t: 40, b: 40 } }}
+                            useResizeHandler={true}
+                            style={{ width: "100%", height: "100%" }}
+                            config={{ displayModeBar: false }}
+                        />
+                    </div>
+                );
+            } catch (e) {
+                console.error("Failed to parse Plotly JSON", e);
+                return <div className="text-red-500 text-sm">Failed to load chart</div>;
+            }
         }
 
         if (!vizConfig || !queryData?.result_data) return null;
@@ -268,19 +307,60 @@ export default function ConversationMessageV2({
                 {/* Main Insight Card */}
                 <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
                     {/* Header: Direct Answer */}
-                    <div className="bg-muted/50 p-6 border-b border-slate-100">
+                    <div className="bg-muted/50 p-6">
                         {hasInsights ? (
-                            <p className="text-lg font-medium text-slate-800 leading-relaxed">
-                                {queryData.insights?.direct_answer}
-                            </p>
+                            typeof queryData.insights === 'string' ? (
+                                // Simple string answer (no detailed insights requested)
+                                <div className="space-y-4">
+                                    <p className="text-lg font-medium text-slate-800 leading-relaxed">
+                                        {queryData.insights}
+                                    </p>
+
+                                    {/* Show visualization inline for simple queries */}
+                                    {hasViz && activeVisualizations[0] && (
+                                        <div className="mt-4">
+                                            {renderChart(activeVisualizations[0])}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                // Structured insights - show direct answer
+                                <p className="text-lg font-medium text-slate-800 leading-relaxed whitespace-pre-wrap">
+                                    {queryData.insights?.direct_answer}
+                                </p>
+                            )
                         ) : (
                             <p className="text-sm text-slate-800 whitespace-pre-wrap">{content}</p>
                         )}
                     </div>
 
-                    {/* Content Section */}
-                    {hasInsights && (
+                    {/* Content Section - Only show structured insights if insights is an object */}
+                    {hasInsights && typeof queryData.insights === 'object' && (
                         <div className="p-6 space-y-8">
+
+                            {/* Confidence Indicator */}
+                            {queryData.insights.confidence !== undefined && (
+                                <div className="flex items-center justify-end gap-2">
+                                    <span className="text-xs text-muted-foreground">AI Confidence:</span>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full transition-all ${queryData.insights.confidence >= 0.8 ? 'bg-green-500' :
+                                                    queryData.insights.confidence >= 0.6 ? 'bg-yellow-500' :
+                                                        'bg-orange-500'
+                                                    }`}
+                                                style={{ width: `${queryData.insights.confidence * 100}%` }}
+                                            />
+                                        </div>
+                                        <span className={`text-xs font-semibold ${queryData.insights.confidence >= 0.8 ? 'text-green-600' :
+                                            queryData.insights.confidence >= 0.6 ? 'text-yellow-600' :
+                                                'text-orange-600'
+                                            }`}>
+                                            {(queryData.insights.confidence * 100).toFixed(0)}%
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Statistical Analysis (New Layer) */}
                             {queryData.interpretation && (
@@ -309,8 +389,9 @@ export default function ConversationMessageV2({
                                 </div>
                             )}
 
-                            {/* Visualization Grid (Multi-Chart) */}
-                            {hasViz && (
+
+                            {/* Visualization Grid (Multi-Chart) - Only for structured insights */}
+                            {hasViz && typeof queryData.insights === 'object' && (
                                 <div className="space-y-4">
                                     <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
                                         <TrendingUp className="w-4 h-4" />
@@ -328,51 +409,56 @@ export default function ConversationMessageV2({
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {/* Key Findings */}
-                                <div>
-                                    <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                        <Lightbulb className="w-4 h-4" />
-                                        Key Findings
-                                    </h4>
-                                    <ul className="space-y-3">
-                                        {queryData.insights?.what_data_shows && queryData.insights.what_data_shows.map((item, i) => (
-                                            <li key={i} className="flex items-start gap-3 text-sm text-slate-700 bg-muted p-3 rounded-lg">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
-                                                <span>{item}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
 
-                                {/* Strategic Implications */}
-                                <div>
-                                    <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                        <Target className="w-4 h-4" />
-                                        Strategic Recommendations
-                                    </h4>
-                                    <ul className="space-y-3">
-                                        {queryData.insights?.business_implications && queryData.insights.business_implications.map((item, i) => (
-                                            <li key={i} className="flex items-start gap-3 text-sm text-slate-700 bg-purple-50/50 p-3 rounded-lg border border-purple-100/50">
-                                                <ArrowRight className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
-                                                <span>{item}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
+                            {queryData.insights.what_data_shows && queryData.insights.what_data_shows.length > 0 && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {/* Key Findings */}
+                                    <div>
+                                        <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                            <Lightbulb className="w-4 h-4" />
+                                            Key Findings
+                                        </h4>
+                                        <ul className="space-y-3">
+                                            {queryData.insights.what_data_shows.map((item: string, i: number) => (
+                                                <li key={i} className="flex items-start gap-3 text-sm text-slate-700 bg-muted p-3 rounded-lg">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+
+                                    {/* Strategic Implications */}
+                                    {queryData.insights.business_implications && queryData.insights.business_implications.length > 0 && (
+                                        <div>
+                                            <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                                <Target className="w-4 h-4" />
+                                                Strategic Recommendations
+                                            </h4>
+                                            <ul className="space-y-3">
+                                                {queryData.insights.business_implications.map((item: string, i: number) => (
+                                                    <li key={i} className="flex items-start gap-3 text-sm text-slate-700 bg-purple-50/50 p-3 rounded-lg border border-purple-100/50">
+                                                        <ArrowRight className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
+                                                        <span>{item}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
+                            )}
 
                             {/* Why it happened (Accordion style or simple block) */}
-                            {queryData.insights?.why_it_happened && queryData.insights.why_it_happened.length > 0 && (
+                            {queryData.insights.why_it_happened && queryData.insights.why_it_happened.length > 0 && (
                                 <div className="bg-amber-50/50 rounded-xl p-4 border border-amber-100/50">
                                     <h4 className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                                         <AlertCircle className="w-4 h-4" />
                                         Drivers & Context
                                     </h4>
                                     <div className="space-y-2">
-                                        {queryData.insights.why_it_happened.map((item, i) => (
+                                        {queryData.insights.why_it_happened.map((item: string, i: number) => (
                                             <p key={i} className="text-sm text-slate-700 leading-relaxed">
-                                                {item}
+                                                • {item}
                                             </p>
                                         ))}
                                     </div>

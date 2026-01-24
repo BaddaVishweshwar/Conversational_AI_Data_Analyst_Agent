@@ -8,6 +8,7 @@ Prevents wasted LLM calls and provides better user experience.
 from typing import Dict, Any, Optional
 import logging
 import json
+import asyncio
 from ..services.ollama_service import ollama_service
 from ..prompts.sql_system_prompts import QUESTION_VALIDATION_SYSTEM_PROMPT
 from ..prompts.chain_of_thought_templates import COT_QUESTION_VALIDATION_TEMPLATE
@@ -55,7 +56,9 @@ class QuestionValidator:
             )
             
             # Call LLM for validation
-            response = ollama_service.generate_response(
+            # Wrap synchronous call in to_thread to avoid blocking event loop
+            response = await asyncio.to_thread(
+                ollama_service.generate_response,
                 prompt=validation_prompt,
                 system_prompt=self.system_prompt,
                 json_mode=True,
@@ -127,6 +130,7 @@ class QuestionValidator:
                     'suggestion': "Please be more specific. For example: 'What is the total revenue?' or 'Show top 10 products by sales'"
                 }
             }
+
         
         # Needs LLM validation
         return {'needs_llm': True}

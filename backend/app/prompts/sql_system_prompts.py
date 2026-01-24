@@ -18,6 +18,7 @@ CRITICAL RULES (MUST FOLLOW):
 8. Use WHERE for filtering raw data
 9. For percentages, multiply by 100.0 and use ROUND()
 10. For top N queries, use ORDER BY ... DESC LIMIT N
+11. AMBIGUOUS AVERAGES: If user asks for "averages" without columns, AVG() all numeric columns
 
 DUCKDB-SPECIFIC SYNTAX:
 - Date functions: DATE_TRUNC('day'|'month'|'year', column)

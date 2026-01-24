@@ -21,48 +21,65 @@ class EmbeddingService:
     """Service for generating and managing embeddings"""
     
     def __init__(self):
-        """Initialize embedding service with OpenRouter support"""
+        """Initialize embedding service with OpenRouter or Ollama support"""
         # Make API key optional - get it if it exists
         self.api_key = getattr(settings, 'OPENAI_API_KEY', None)
         
         # Check if using OpenRouter (key starts with sk-or-)
         self.use_openrouter = self.api_key and self.api_key.startswith('sk-or-')
+        self.use_ollama = getattr(settings, 'USE_OLLAMA', False)
         
+        self.client = None
+        self.provider = "openai"
+
         if self.use_openrouter:
             # OpenRouter configuration
-            self.model = "openai/text-embedding-3-small"  # OpenRouter model path
-            self.dimensions = 1536  # Standard for text-embedding-3-small
+            self.model = "openai/text-embedding-3-small"
+            self.dimensions = 1536
+            self.provider = "openrouter"
             logger.info("Using OpenRouter for embeddings")
-        else:
+        elif self.api_key:
             # Direct OpenAI configuration
             self.model = getattr(settings, 'EMBEDDING_MODEL', 'text-embedding-3-small')
             self.dimensions = getattr(settings, 'EMBEDDING_DIMENSIONS', 1536)
+            self.provider = "openai"
+            logger.info("Using OpenAI directly for embeddings")
+        elif self.use_ollama:
+            # Ollama Configuration
+            self.model = getattr(settings, 'OLLAMA_EMBEDDING_MODEL', 'nomic-embed-text')
+            self.dimensions = 768 # Default for nomic-embed-text/mxbai-embed-large
+            self.provider = "ollama"
+            logger.info(f"Using Ollama for embeddings (Model: {self.model})")
+        
+        self.batch_size = getattr(settings, 'EMBEDDING_BATCH_SIZE', 100)
+        
+        # Initialize Client based on provider
+        if self.provider == "openai" or self.provider == "openrouter":
             if self.api_key:
-                logger.info("Using OpenAI directly for embeddings")
-        
-        self.batch_size = getattr(settings, 'EMBEDDING_BATCH_SIZE', 100)  # Add batch_size for all configurations
-        
-        if self.api_key:
+                try:
+                    from openai import OpenAI
+                    if self.use_openrouter:
+                        self.client = OpenAI(api_key=self.api_key, base_url="https://openrouter.ai/api/v1")
+                    else:
+                        self.client = OpenAI(api_key=self.api_key)
+                    logger.info(f"✅ Embedding service initialized with model: {self.model}")
+                except Exception as e:
+                    logger.error(f"Failed to initialize OpenAI client: {str(e)}")
+        elif self.provider == "ollama":
+            # Check availability
             try:
-                from openai import OpenAI
-                
-                if self.use_openrouter:
-                    # OpenRouter endpoint
-                    self.client = OpenAI(
-                        api_key=self.api_key,
-                        base_url="https://openrouter.ai/api/v1"
-                    )
-                else:
-                    # Direct OpenAI
-                    self.client = OpenAI(api_key=self.api_key)
-                
-                logger.info(f"✅ Embedding service initialized with model: {self.model}")
-            except Exception as e:
-                logger.error(f"Failed to initialize embedding client: {str(e)}")
-                self.client = None
+                import ollama
+                self.client = ollama.Client(host=settings.OLLAMA_HOST)
+                # Quick health check
+                try:
+                    self.client.list()
+                    logger.info(f"✅ Ollama embedding service available: {self.model}")
+                except Exception as e:
+                     logger.warning(f"⚠️ Ollama service reachable but list failed: {e}")
+            except ImportError:
+                logger.error("Ollama python package not installed")
         else:
-            logger.warning("⚠️ OpenAI API key not configured. Embedding service will not work. RAG features disabled.")
-            self.client = None
+            logger.warning("⚠️ No valid embedding provider configured. RAG features disabled.")
 
     
     def generate_embedding(self, text: str) -> Optional[List[float]]:
@@ -75,8 +92,8 @@ class EmbeddingService:
         Returns:
             List of floats representing the embedding vector
         """
-        if not self.client:
-            logger.error("OpenAI client not initialized")
+        if not self.client and not (self.provider == "ollama"):
+            logger.error("Embedding client not initialized")
             return None
         
         try:
@@ -85,32 +102,34 @@ class EmbeddingService:
             if not text:
                 return None
             
-            # Generate embedding
-            response = self.client.embeddings.create(
-                model=self.model,
-                input=text
-            )
+            # OpenAI / OpenRouter
+            if self.provider in ["openai", "openrouter"]:
+                response = self.client.embeddings.create(
+                    model=self.model,
+                    input=text
+                )
+                return response.data[0].embedding
             
-            embedding = response.data[0].embedding
-            return embedding
+            # Ollama
+            elif self.provider == "ollama":
+                response = self.client.embeddings(
+                    model=self.model,
+                    prompt=text
+                )
+                return response['embedding']
+                
+            return None
             
         except Exception as e:
-            logger.error(f"Error generating embedding: {str(e)}")
+            logger.error(f"Error generating embedding ({self.provider}): {str(e)}")
             return None
     
     def generate_embeddings_batch(self, texts: List[str]) -> List[Optional[List[float]]]:
         """
         Generate embeddings for multiple texts in batches.
-        More efficient than calling generate_embedding multiple times.
-        
-        Args:
-            texts: List of texts to embed
-            
-        Returns:
-            List of embedding vectors (same order as input)
         """
-        if not self.client:
-            logger.error("OpenAI client not initialized")
+        if not self.client and not (self.provider == "ollama"):
+            logger.error("Embedding client not initialized")
             return [None] * len(texts)
         
         try:
@@ -120,20 +139,29 @@ class EmbeddingService:
             if not cleaned_texts:
                 return [None] * len(texts)
             
-            # Process in batches
             all_embeddings = []
             
-            for i in range(0, len(cleaned_texts), self.batch_size):
-                batch = cleaned_texts[i:i + self.batch_size]
-                
-                response = self.client.embeddings.create(
-                    model=self.model,
-                    input=batch
-                )
-                
-                batch_embeddings = [item.embedding for item in response.data]
-                all_embeddings.extend(batch_embeddings)
+            # OpenAI / OpenRouter - Batch API Supported
+            if self.provider in ["openai", "openrouter"]:
+                 for i in range(0, len(cleaned_texts), self.batch_size):
+                    batch = cleaned_texts[i:i + self.batch_size]
+                    response = self.client.embeddings.create(
+                        model=self.model,
+                        input=batch
+                    )
+                    batch_embeddings = [item.embedding for item in response.data]
+                    all_embeddings.extend(batch_embeddings)
             
+            # Ollama - No Batch API yet (must loop)
+            elif self.provider == "ollama":
+                for text in cleaned_texts:
+                    try:
+                        response = self.client.embeddings(model=self.model, prompt=text)
+                        all_embeddings.append(response['embedding'])
+                    except Exception as e:
+                        logger.warning(f"Ollama embedding failed for item: {e}")
+                        all_embeddings.append(None)
+                        
             return all_embeddings
             
         except Exception as e:

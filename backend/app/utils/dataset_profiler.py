@@ -101,6 +101,11 @@ class DatasetProfiler:
         # Generate business meaning if LLM available
         if self.ollama_service:
             profile["business_meaning"] = self._generate_business_meaning(column_name, profile)
+            profile["synonyms"] = self._generate_synonym_mappings(column_name, profile)
+            profile["aggregation_patterns"] = self._detect_aggregation_patterns(column_name, profile)
+        else:
+            profile["synonyms"] = []
+            profile["aggregation_patterns"] = self._detect_aggregation_patterns(column_name, profile)
         
         return profile
     
@@ -272,6 +277,79 @@ Business Meaning:"""
         except Exception as e:
             logger.warning(f"Failed to generate business meaning for {column_name}: {e}")
             return f"{profile['semantic_type'].replace('_', ' ').title()} column"
+    
+    def _generate_synonym_mappings(self, column_name: str, profile: Dict[str, Any]) -> List[str]:
+        """
+        Generate synonym mappings for column using LLM.
+        
+        Args:
+            column_name: Name of column
+            profile: Column profile dictionary
+            
+        Returns:
+            List of synonyms
+        """
+        try:
+            prompt = f"""List 3-5 business synonyms for this column (comma-separated, no explanations).
+
+Column: {column_name}
+Type: {profile['semantic_type']}
+Samples: {', '.join(profile['sample_values'][:3])}
+
+Synonyms:"""
+            
+            response = self.ollama_service.generate_response(
+                prompt=prompt,
+                temperature=0.3,
+                task_type='insight_generation',
+                max_tokens=100
+            )
+            
+            # Parse comma-separated synonyms
+            synonyms = [s.strip() for s in response.strip().split(',')]
+            return synonyms[:5]  # Limit to 5
+            
+        except Exception as e:
+            logger.warning(f"Failed to generate synonyms for {column_name}: {e}")
+            return []
+    
+    def _detect_aggregation_patterns(self, column_name: str, profile: Dict[str, Any]) -> List[str]:
+        """
+        Detect common aggregation patterns for column.
+        
+        Args:
+            column_name: Name of column
+            profile: Column profile dictionary
+            
+        Returns:
+            List of suggested aggregations
+        """
+        patterns = []
+        semantic_type = profile.get('semantic_type', 'unknown')
+        data_type = profile.get('data_type', 'unknown')
+        
+        # Numeric columns
+        if 'int' in data_type.lower() or 'float' in data_type.lower():
+            if semantic_type in ['currency', 'numeric']:
+                patterns.extend(['SUM', 'AVG', 'MIN', 'MAX'])
+            elif semantic_type == 'identifier':
+                patterns.extend(['COUNT', 'COUNT DISTINCT'])
+            else:
+                patterns.extend(['SUM', 'AVG', 'COUNT'])
+        
+        # Categorical columns
+        elif semantic_type in ['categorical', 'text']:
+            patterns.extend(['COUNT', 'COUNT DISTINCT', 'MODE'])
+        
+        # Datetime columns
+        elif semantic_type == 'datetime':
+            patterns.extend(['MIN', 'MAX', 'COUNT'])
+        
+        # Boolean columns
+        elif semantic_type == 'boolean':
+            patterns.extend(['COUNT', 'SUM'])
+        
+        return patterns
     
     def _assess_data_quality(self, df: pd.DataFrame) -> Dict[str, Any]:
         """
