@@ -21,7 +21,7 @@ Replace `your_api_key_here` with your actual API key.
 The system will automatically:
 - Use Gemini for SQL generation (much better accuracy)
 - Fall back to local Mistral if Gemini fails
-- Give you CamelAI-level results
+- Give you Enterprise-level results
 
 ## Test After Adding Key
 

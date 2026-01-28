@@ -10,6 +10,7 @@ import re
 import logging
 from ..config import settings
 from . import Insights, ExecutionResult, IntentResult, InterpretationResult
+from ..services.ollama_service import ollama_service
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +31,9 @@ class InsightGeneratorAgent:
     """
     
     def __init__(self):
-        self.client = ollama.Client(host=settings.OLLAMA_HOST)
         self.model_name = settings.OLLAMA_MODEL
     
-    def generate(
+    async def generate(
         self,
         query: str,
         execution_result: ExecutionResult,
@@ -111,15 +111,11 @@ Warnings: {', '.join(interpretation.warnings) if interpretation.warnings else 'N
         )
         
         try:
-            response = self.client.generate(
-                model=self.model_name,
+            # Generate with LLM
+            result_text = await ollama_service.generate_response(
                 prompt=prompt,
-                options={"temperature": 0.7, "num_predict": 2048}  # More creative for narrative writing
+                task_type='insight_generation'
             )
-            
-            
-            # Parse JSON response with robust extractor
-            result_text = response['response'].strip()
             
             from ..utils.json_extractor import extract_json_from_llm_response
             fallback = {

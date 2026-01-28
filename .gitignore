@@ -1,31 +1,40 @@
-
-# Dependencies
-node_modules/
+# Python
 __pycache__/
-*.pyc
-.env
-.venv
+*.py[cod]
+*$py.class
 venv/
+.env
+.venv/
 env/
-
-# Data and Artifacts
-backend/uploads/
-backend/vector_db/
-backend/exports/
-backend/*.db
-backend/*.sqlite
-backend/profile_*.json
 
 # Logs
 *.log
+full_logs.txt
+backend/last_pandas_error.txt
 backend_debug.log
 
-# OS specific
-.DS_Store
+# Database
+*.db
+*.sqlite3
+backend/vector_db/
+backend/*.sqlite
+
+# Data and Artifacts
+backend/uploads/
+backend/exports/
+backend/profile_*.json
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.DS_Store
 
 # IDE
 .vscode/
 .idea/
+
+# OS
+.DS_Store
 
 # Testing
 debug_pandasai.py

@@ -4,6 +4,7 @@ Intent Classification Agent
 Classifies user queries into analytical intent categories to drive the entire pipeline.
 """
 import ollama
+from ..services.anthropic_service import anthropic_service
 from typing import Dict, Any
 import json
 import logging
@@ -105,14 +106,63 @@ OUTPUT FORMAT (JSON):
 Respond with ONLY the JSON, no other text."""
 
         try:
-            response = self.client.generate(
-                model=self.model_name,
-                prompt=prompt,
-                options={"temperature": 0.1, "num_predict": 512}
-            )
+            if settings.USE_ANTHROPIC:
+                result_text = None
+                try:
+                    result_text = self.client_anthropic.generate_response(
+                        prompt=prompt,
+                        temperature=0.0,
+                        max_tokens=512,
+                        json_mode=True
+                    )
+                except AttributeError:
+                     # Lazy load if needed or access global
+                     from ..services.anthropic_service import anthropic_service
+                     result_text = anthropic_service.generate_response(
+                        prompt=prompt,
+                        temperature=0.0,
+                        max_tokens=512,
+                        json_mode=True
+                     )
+
+                # Wait, generate_response is async. We are in sync method here? 
+                # The classify method is synchronous in the original code.
+                # But AnthropicService.generate_response is async.
+                # We need to run it synchronously here or refactor. 
+                # Given existing architecture, let's use a helper or run_until_complete if allowed, 
+                # OR better, since this is called via `await asyncio.to_thread` in analytics_service_v4.py,
+                # we can actually make this async or run it sync. 
+                
+                # Actually, `intent_classifier.classify` is called via `asyncio.to_thread`.
+                # So we can't easily await inside it unless we used a sync client in AnthropicService?
+                # AnthropicService uses `asyncio.to_thread(client.messages.create...)`.
+                # So it is async.
+                
+                # WORKAROUND: Use the sync client directly here for now to avoid refactoring everything to async
+                # OR use a new sync method in AnthropicService.
+                
+                # Let's import anthropic library directly here for sync execution to match original design
+                import anthropic
+                client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+                
+                response = client.messages.create(
+                    model=settings.ANTHROPIC_MODEL,
+                    max_tokens=512,
+                    temperature=0.0,
+                    system="You are an intent classification expert. Classify this query into ONE category. Output JSON only.",
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                result_text = response.content[0].text
+
+            else:
+                response = self.client.generate(
+                    model=self.model_name,
+                    prompt=prompt,
+                    options={"temperature": 0.1, "num_predict": 512}
+                )
+                result_text = response['response'].strip()
             
             # Parse JSON response
-            result_text = response['response'].strip()
             
             # Extract JSON if wrapped in markdown
             if "```json" in result_text:

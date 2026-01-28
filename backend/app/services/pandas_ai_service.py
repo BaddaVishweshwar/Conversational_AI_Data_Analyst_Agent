@@ -4,72 +4,75 @@ from typing import Dict, Any, Optional
 import base64
 from pandasai import SmartDataframe
 from pandasai.llm.base import LLM
-from pandasai.core.prompts.base import BasePrompt
+# from pandasai.core.prompts.base import BasePrompt
+
 from ..config import settings
 from ..services.ollama_service import ollama_service
 
 logger = logging.getLogger(__name__)
 
+class PandasAIAnthropicLLM(LLM):
+    """
+    Custom Anthropic LLM for PandasAI using appropriate models.
+    """
+    def __init__(self, api_key: str, model: str, **kwargs):
+        super().__init__(**kwargs)
+        self.api_key = api_key
+        self.model = model
+        self.client = None
+        try:
+             import anthropic
+             self.client = anthropic.Anthropic(api_key=api_key)
+        except ImportError:
+             raise ImportError("anthropic package not installed")
+
+    def type(self) -> str:
+        return "anthropic"
+
+    def call(self, instruction: Any, context: Any = None) -> str:
+        if hasattr(instruction, 'to_string'):
+            prompt_text = instruction.to_string()
+        else:
+            prompt_text = str(instruction)
+            
+        try:
+             message = self.client.messages.create(
+                 model=self.model,
+                 max_tokens=4096,
+                 temperature=0.1,
+                 messages=[{"role": "user", "content": prompt_text}]
+             )
+             return message.content[0].text
+        except Exception as e:
+             logger.error(f"Anthropic LLM Error: {e}")
+             raise e
+
 class PandasAIOllamaLLM(LLM):
     """
-    Custom PandasAI LLM implementation using our existing OllamaService.
-    Adapts PandasAI's LLM interface to our Ollama infrastructure.
+    Custom Ollama LLM for PandasAI.
     """
-    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        from ..config import settings
+        import ollama
+        self.host = settings.OLLAMA_HOST
         self.model = settings.OLLAMA_MODEL
-        
+        self.client = ollama.Client(host=self.host)
+
     def type(self) -> str:
         return "ollama"
 
-    def call(self, instruction: BasePrompt, context: Any = None) -> str:
-        """
-        Execute the LLM with given prompt.
-        PandasAI passes a BasePrompt object which has to_string() method.
-        """
-        prompt_text = instruction.to_string()
-        
-        # Log the prompt for debugging
-        # logger.info(f"PandasAI Prompt: {prompt_text[:200]}...")
-        
+    def call(self, instruction: Any, context: Any = None) -> str:
+        if hasattr(instruction, 'to_string'):
+            prompt_text = instruction.to_string()
+        else:
+            prompt_text = str(instruction)
+            
         try:
-            # Bypass async wrapper and call Ollama directly synchronously
-            # This avoids nested loop/thread issues since PandasAI is sync
-            import ollama
-            
-            # Get prompt configuration
-            system_prompt = """You are a data analysis assistant. 
-            RULES:
-            1. Output ONLY python code.
-            2. The dataframe is already loaded as `dfs[0]`. Use `dfs[0]` directly.
-            3. DO NOT use `execute_sql_query` or any SQL. DO NOT use `duckdb`.
-            4. If asked to visualize/plot, you MUST use matplotlib/seaborn and save the plot to 'exports/charts/temp_chart_<uuid>.png'.
-            5. Do not wrap code in markdown blocks.
-            6. The LAST line of code must be the path to the saved image file as a string. Example: 'exports/charts/plot.png'"""
-            full_prompt = f"System: {system_prompt}\n\nUser: {prompt_text}"
-            
-            logger.info(f"Sending prompt to Ollama (Sync): {full_prompt[:100]}...")
-            
-            client = ollama.Client(host=settings.OLLAMA_HOST)
-            
-            options = {
-                "temperature": 0.1,
-                "num_predict": 2048,
-                # "stop": ["```"] # Don't stop early for PandasAI as it might explain
-            }
-            
-            response_obj = client.generate(
-                model=settings.OLLAMA_MODEL,
-                prompt=full_prompt,
-                options=options
-            )
-            
-            response = response_obj['response']
-            logger.info(f"PandasAI LLM Response:\n{response}")
-            return response
+            response = self.client.generate(model=self.model, prompt=prompt_text)
+            return response['response']
         except Exception as e:
-            logger.error(f"PandasAI LLM Call Error: {e}")
+            logger.error(f"Ollama LLM Error: {e}")
             raise e
 
 class PandasAIService:
@@ -83,7 +86,14 @@ class PandasAIService:
     
     def _configure_llm(self):
         """Configure the LLM for PandasAI"""
-        # Always use our custom Ollama wrapper for consistency
+        if settings.USE_ANTHROPIC and settings.ANTHROPIC_API_KEY:
+             logger.info(f"Using Custom Anthropic LLM for PandasAI: {settings.ANTHROPIC_MODEL}")
+             return PandasAIAnthropicLLM(
+                 api_key=settings.ANTHROPIC_API_KEY,
+                 model=settings.ANTHROPIC_MODEL
+             )
+        
+        # Default fallback to Ollama (even if it might fail if not running)
         return PandasAIOllamaLLM()
 
     def analyze(self, df: pd.DataFrame, query: str) -> Dict[str, Any]:
@@ -106,15 +116,19 @@ class PandasAIService:
                 df, 
                 config={
                     "llm": self.llm,
-                    "save_charts": True, # Ensure charts are saved to disk temporarily
-                    "save_charts_path": settings.UPLOAD_DIR, # Use upload dir for temp charts
-                    "custom_whitelisted_dependencies": ["matplotlib", "seaborn", "plotly"],
-                    "verbose": True
+                    "save_charts": True,
+                    "save_charts_path": settings.UPLOAD_DIR,
+                    "enable_cache": False, # Disable cache to prevent stale results during dev
+                    "custom_whitelisted_dependencies": ["matplotlib", "seaborn", "plotly", "scipy", "numpy"],
+                    "verbose": True,
+                    # "response_parser": ... # Let default parser handle it initially
                 }
             )
             
             # Execute chat
-            response = sdf.chat(query)
+            # Prepend robust instructions to prevent hallucinations about "execute_sql_query"
+            enhanced_query = f"{query}\n\nIMPORTANT: You must analyze the dataframe 'df' using standard pandas python code. Do NOT try to use SQL. Do NOT call 'execute_sql_query'. Use simple print() or result assignment."
+            response = sdf.chat(enhanced_query)
             logger.info(f"PandasAI Execution Result Type: {type(response)}")
             logger.info(f"PandasAI Execution Result: {response}")
             
@@ -138,6 +152,7 @@ class PandasAIService:
             is_image_path = False
             image_path = ""
             
+            # Check for plot file
             if isinstance(response, str):
                 if response.lower().endswith('.png') or response.lower().endswith('.jpg') or response.lower().endswith('.jpeg'):
                     is_image_path = True
@@ -145,6 +160,17 @@ class PandasAIService:
                 elif isinstance(response, dict) and response.get('type') == 'plot':
                     is_image_path = True
                     image_path = response.get('value')
+            
+            # Additional check: Look at executed code for savefig
+            if not is_image_path and hasattr(sdf, 'last_code_executed') and sdf.last_code_executed:
+                import re
+                # Look for .savefig('filename') or .savefig("filename")
+                match = re.search(r"savefig\(['\"]([^'\"]+)['\"]\)", sdf.last_code_executed)
+                if match:
+                    potential_path = match.group(1)
+                    logger.info(f"Found potential chart path in code: {potential_path}")
+                    is_image_path = True
+                    image_path = potential_path
 
             # Check for plot file
             if is_image_path:

@@ -1,7 +1,7 @@
 """
 Response Formatter Service
 
-Formats analysis results into CamelAI-style structured responses with
+Formats analysis results into Enterprise-style structured responses with
 understanding, approach, exploratory steps, SQL, visualizations, and insights.
 """
 
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class ResponseFormatterService:
-    """Service to format final analysis response in CamelAI structure."""
+    """Service to format final analysis response in Enterprise structure."""
     
     @staticmethod
     def format_final_response(

@@ -4,6 +4,7 @@ import logging
 from typing import Dict, Any, List, Optional
 from ..config import settings
 from . import VizConfig, ChartType, IntentResult, ExecutionResult
+from ..services.ollama_service import ollama_service
 
 logger = logging.getLogger(__name__)
 
@@ -12,12 +13,10 @@ class VisualizationSelectorAgent:
     Intelligent chart type selection using LLM.
     Selects the best visualization based on data shape, intent, and column types.
     """
-    
     def __init__(self):
-        self.client = ollama.Client(host=settings.OLLAMA_HOST)
         self.model_name = settings.OLLAMA_MODEL
 
-    def select(
+    async def select(
         self,
         intent: IntentResult,
         execution_result: ExecutionResult,
@@ -37,7 +36,7 @@ class VisualizationSelectorAgent:
         # Prepare context for LLM
         sample_data = json.dumps(data[:3], indent=2, default=str)
         
-        prompt = f"""You are a Data Visualization Expert (CamelAI Style). 
+        prompt = f"""You are a Data Visualization Expert (Enterprise Style). 
 Choose 2-3 COMPLEMENTARY charts to visualize this data effectively.
 1. Primary Chart: The best single view.
 2. KPI Cards: If appropriate (big numbers).
@@ -89,13 +88,12 @@ OUTPUT FORMAT (JSON):
 Respond with ONLY the JSON."""
 
         try:
-            response = self.client.generate(
-                model=self.model_name,
+            response = await ollama_service.generate_response(
                 prompt=prompt,
-                options={"temperature": 0.1, "num_predict": 1024}
+                task_type='visualization'
             )
             
-            result_text = response['response'].strip()
+            result_text = response.strip()
             
             # Clean JSON
             if "```json" in result_text:

@@ -9,6 +9,8 @@ from typing import Dict, Any, Optional
 import logging
 import re
 from ..services.ollama_service import ollama_service
+from ..services.anthropic_service import anthropic_service
+from ..config import settings
 from ..prompts.sql_system_prompts import SQL_CORRECTION_SYSTEM_PROMPT
 from ..prompts.chain_of_thought_templates import COT_SQL_CORRECTION_TEMPLATE
 
@@ -63,13 +65,31 @@ class SQLCorrectionAgent:
             )
             
             # Generate corrected SQL
-            corrected_sql = ollama_service.generate_response(
-                prompt=correction_prompt,
-                system_prompt=self.system_prompt,
-                temperature=0.1,
-                task_type='error_correction',
-                max_tokens=1500
-            )
+            if settings.USE_ANTHROPIC:
+                corrected_sql = await anthropic_service.generate_response(
+                    prompt=correction_prompt,
+                    system_prompt=self.system_prompt,
+                    temperature=0.1,
+                    task_type='error_correction',
+                    max_tokens=1500
+                )
+            else:
+                corrected_sql = await ollama_service.generate_response( # Fixed: use generate_response adapter if available or generate
+                    prompt=correction_prompt,
+                    system_prompt=self.system_prompt,
+                    temperature=0.1,
+                    task_type='error_correction',
+                    max_tokens=1500
+                ) if hasattr(ollama_service, 'generate_response') else await ollama_service.generate(
+                    system_prompt=self.system_prompt,
+                    user_prompt=correction_prompt,
+                    temperature=0.1,
+                    task_type='error_correction', 
+                    max_tokens=1500
+                )
+                
+                if isinstance(corrected_sql, dict) and 'response' in corrected_sql:
+                     corrected_sql = corrected_sql['response']
             
             # Clean up response
             corrected_sql = self._extract_sql(corrected_sql)

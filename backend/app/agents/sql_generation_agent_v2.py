@@ -1,5 +1,5 @@
 """
-SQL Generation Agent - CamelAI-Grade SQL Query Generation
+SQL Generation Agent - Enterprise-Grade SQL Query Generation
 
 This agent generates production-ready SQL queries using:
 - Chain-of-thought reasoning
@@ -13,6 +13,7 @@ from typing import Dict, Any, Optional, List
 import logging
 import re
 from ..services.ollama_service import ollama_service
+from ..services.anthropic_service import anthropic_service
 from ..prompts.sql_system_prompts import SQL_GENERATION_SYSTEM_PROMPT
 from ..prompts.few_shot_examples import get_examples_by_intent, format_examples_for_prompt
 from ..prompts.chain_of_thought_templates import COT_SQL_GENERATION_TEMPLATE
@@ -211,6 +212,15 @@ Think step-by-step:
 Then provide ONLY the SQL query:
 """
         
+        if settings.USE_ANTHROPIC:
+             return await anthropic_service.generate_response(
+                prompt=cot_prompt,
+                system_prompt="You are an expert SQL analyst. Generate accurate DuckDB SQL queries.",
+                temperature=temperature or 0.1,
+                task_type='sql_generation',
+                max_tokens=2000
+             )
+
         response = await ollama_service.generate(
             system_prompt="You are an expert SQL analyst. Generate accurate DuckDB SQL queries.",
             user_prompt=cot_prompt,
@@ -246,6 +256,15 @@ Now generate SQL for:
 {context}
 """
         
+        if settings.USE_ANTHROPIC:
+             return await anthropic_service.generate_response(
+                prompt=full_prompt,
+                system_prompt="You are an expert SQL analyst.",
+                temperature=temperature or 0.1,
+                task_type='sql_generation',
+                max_tokens=1500
+             )
+
         response = await ollama_service.generate(
             system_prompt="You are an expert SQL analyst.",
             user_prompt=full_prompt,

@@ -5,7 +5,7 @@ This module contains comprehensive, professional-grade prompts (40-70 pages equi
 for each specialized agent in the system. These prompts are designed to achieve
 professional data analyst and data scientist level output.
 
-Based on Backend.txt specifications and CamelAI architecture.
+Based on Backend.txt specifications and Enterprise architecture.
 """
 
 # ============================================================================

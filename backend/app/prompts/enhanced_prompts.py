@@ -1,7 +1,7 @@
 """
 Enhanced Prompt Templates for Multi-Agent Analytics Pipeline
 
-CamelAI-grade prompts with rich context, structured outputs, and task-specific configurations.
+Enterprise-grade prompts with rich context, structured outputs, and task-specific configurations.
 """
 
 # ============================================================================

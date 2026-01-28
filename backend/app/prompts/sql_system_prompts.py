@@ -1,5 +1,5 @@
 """
-SQL System Prompts - CamelAI-Grade Prompt Engineering
+SQL System Prompts - Enterprise-Grade Prompt Engineering
 
 This module contains comprehensive system prompts for SQL generation
 with strict rules, best practices, and DuckDB-specific optimizations.

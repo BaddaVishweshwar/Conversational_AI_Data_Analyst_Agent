@@ -1,7 +1,7 @@
 """
 Response Structure Enforcer
 
-Ensures all responses follow CamelAI-style executive format:
+Ensures all responses follow Enterprise-style executive format:
 1. Executive Answer
 2. Key Findings
 3. Supporting Data
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class ResponseStructureEnforcer:
-    """Enforces strict CamelAI-style response structure."""
+    """Enforces strict Enterprise-style response structure."""
     
     @staticmethod
     def enforce_structure(
@@ -34,7 +34,7 @@ class ResponseStructureEnforcer:
         """
         Enforce strict response structure.
         
-        Returns CamelAI-formatted response with all required sections.
+        Returns Enterprise-formatted response with all required sections.
         """
         try:
             # Build structured response

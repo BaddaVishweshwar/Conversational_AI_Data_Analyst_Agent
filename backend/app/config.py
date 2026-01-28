@@ -60,6 +60,13 @@ class Settings(BaseSettings):
     GEMINI_TIMEOUT: int = 30
     GEMINI_MAX_TOKENS: int = 2048
     
+    # Anthropic Configuration (Claude)
+    ANTHROPIC_API_KEY: Optional[str] = None
+    ANTHROPIC_MODEL: str = "claude-3-haiku-20240307"
+    USE_ANTHROPIC: bool = True
+    ANTHROPIC_TIMEOUT: int = 120
+    ANTHROPIC_MAX_TOKENS: int = 4096
+    
     # Clerk Authentication
     CLERK_SECRET_KEY: Optional[str] = None
     CLERK_PUBLISHABLE_KEY: Optional[str] = None
@@ -112,7 +119,7 @@ class Settings(BaseSettings):
     ENABLE_CHAIN_OF_THOUGHT: bool = True
     
     # CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175"]
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175"]
     
     class Config:
         env_file = ".env"

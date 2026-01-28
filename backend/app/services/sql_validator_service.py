@@ -17,7 +17,7 @@ import sqlglot
 import pandas as pd
 import duckdb
 from ..services.ollama_service import ollama_service
-from ..prompts.camelai_prompts import MASTER_SYSTEM_PROMPT
+from ..prompts.enterprise_prompts import MASTER_SYSTEM_PROMPT
 
 logger = logging.getLogger(__name__)
 

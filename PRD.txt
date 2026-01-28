@@ -1,11 +1,11 @@
 # AI Data Analyst Enhancement PRD
-## Achieving CamelAI-Level Query Accuracy & Insights
+## Achieving Enterprise-Level Query Accuracy & Insights
 
 ---
 
 ## Executive Summary
 
-Your current implementation uses Ollama with a basic text-to-SQL approach, achieving approximately 30% query accuracy (industry baseline for direct LLM-to-SQL). CamelAI achieves 80%+ accuracy through sophisticated database mapping, multi-stage validation, and iterative refinement. This PRD outlines the architectural changes, techniques, and tech stack needed to reach production-grade accuracy.
+Your current implementation uses Ollama with a basic text-to-SQL approach, achieving approximately 30% query accuracy (industry baseline for direct LLM-to-SQL). Enterprise benchmarks achieve 80%+ accuracy through sophisticated database mapping, multi-stage validation, and iterative refinement. This PRD outlines the architectural changes, techniques, and tech stack needed to reach production-grade accuracy.
 
 ---
 
@@ -32,7 +32,7 @@ Your current implementation uses Ollama with a basic text-to-SQL approach, achie
 
 ### 1. Database Mapping & Indexing System
 
-**Problem**: CamelAI reports 30% → 80% accuracy improvement through database mapping.
+**Problem**: Enterprise AI systems report 30% → 80% accuracy improvement through database mapping.
 
 **Solution**: Build a comprehensive database profiling system
 
@@ -496,7 +496,7 @@ Provide 3-5 key insights in business language:
 ## Key Techniques Summary
 
 ### 1. **Database Mapping** (Highest Impact)
-Replicate CamelAI's approach: comprehensive schema profiling, semantic annotations, value distributions
+Replicate high-performance approaches: comprehensive schema profiling, semantic annotations, value distributions
 
 ### 2. **RAG for Queries**
 Store and search past successful queries, inject as examples in prompts
@@ -591,7 +591,7 @@ Focus on **database mapping and validation** first - these give the biggest accu
 
 ## References & Resources
 
-- **CamelAI Database Mapping**: Their blog post explains 30%→80% improvement
+- **Enterprise Database Mapping**: Their blog post explains 30%→80% improvement
 - **Google's Text-to-SQL Guide**: Best practices from Cloud SQL team
 - **LangChain SQL Agents**: Reference implementation patterns
 - **Spider Benchmark**: Standard dataset for text-to-SQL evaluation

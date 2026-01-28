@@ -1,5 +1,5 @@
 """
-Analytics Service V4 - CamelAI-Grade Multi-Agent Pipeline
+Analytics Service V4 - Enterprise-Grade Multi-Agent Pipeline
 
 This service orchestrates the complete multi-agent workflow:
 1. Question Validation - Filter invalid questions
@@ -73,7 +73,7 @@ class AnalyticsServiceV4:
         db: Session
     ) -> Dict[str, Any]:
         """
-        Complete CamelAI-grade multi-agent analysis pipeline.
+        Complete Enterprise-grade multi-agent analysis pipeline.
         
         Args:
             user_question: User's natural language question
@@ -86,7 +86,7 @@ class AnalyticsServiceV4:
         start_time = time.time()
         
         try:
-            logger.info(f"🚀 Starting CamelAI-grade analysis for dataset {dataset_id}: {user_question}")
+            logger.info(f"🚀 Starting Enterprise-grade analysis for dataset {dataset_id}: {user_question}")
             
             # Step 0: Build RAG Context (needed for validation)
             logger.info("Step 0: Retrieving schema context via RAG")
@@ -165,7 +165,7 @@ class AnalyticsServiceV4:
             
             # Keywords to force Python
             trigger_keywords = [
-                "correlation", "heatmap", "predict", "forecast", "plot", "chart", 
+                "correlation", "heatmap", "predict", "forecast", "plot", "chart", "graph",
                 "analyze", "compare", "vs", "difference", "relationship", "trend",
                 "show", "list", "what is", "how many" 
             ]
@@ -182,6 +182,11 @@ class AnalyticsServiceV4:
                     return await self._run_python_analysis(dataset_id, user_question, query_analysis, rag_context, db)
                 except Exception as e:
                     logger.error(f"PandasAI analysis failed, falling back to SQL: {e}")
+                    # Debug: Write error to file for visibility
+                    with open("last_pandas_error.txt", "w") as f:
+                        f.write(str(e))
+                        import traceback
+                        f.write("\n" + traceback.format_exc())
                     # Fallthrough to SQL path
             
             # Step 4: SQL Generation (with few-shot learning)

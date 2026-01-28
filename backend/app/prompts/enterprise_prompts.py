@@ -1,6 +1,6 @@
 """
-CamelAI-Grade Prompt Templates
-Production-tested prompts for achieving CamelAI-quality results
+Enterprise-Grade Prompt Templates
+Production-tested prompts for achieving Enterprise-quality results
 """
 
 # ============================================================================

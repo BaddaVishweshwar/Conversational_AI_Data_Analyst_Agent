@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class EnhancedExplorationAgent:
     """Agent for executing exploratory queries with enhanced prompting."""
     
-    def explore(
+    async def explore(
         self,
         sub_questions: List[str],
         df: pd.DataFrame,
@@ -52,7 +52,7 @@ class EnhancedExplorationAgent:
                 logger.info(f"Exploratory query {i+1}/{min(len(sub_questions), max_queries)}: {sub_question}")
                 
                 # Generate SQL for this sub-question
-                sql_result = self._generate_exploratory_sql(
+                sql_result = await self._generate_exploratory_sql(
                     sub_question=sub_question,
                     enriched_schema=enriched_schema,
                     previous_findings=previous_findings
@@ -100,7 +100,7 @@ class EnhancedExplorationAgent:
         logger.info(f"Exploratory analysis complete: {len(exploratory_results)} successful queries")
         return exploratory_results
     
-    def _generate_exploratory_sql(
+    async def _generate_exploratory_sql(
         self,
         sub_question: str,
         enriched_schema: Dict[str, Any],
@@ -126,7 +126,7 @@ class EnhancedExplorationAgent:
             )
             
             # Generate with LLM
-            response = ollama_service.generate_response(
+            response = await ollama_service.generate_response(
                 prompt=prompt,
                 json_mode=True,
                 task_type='exploratory'

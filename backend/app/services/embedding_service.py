@@ -30,7 +30,7 @@ class EmbeddingService:
         self.use_ollama = getattr(settings, 'USE_OLLAMA', False)
         
         self.client = None
-        self.provider = "openai"
+        self.provider = "local" # Default to local for reliability
 
         if self.use_openrouter:
             # OpenRouter configuration
@@ -44,7 +44,7 @@ class EmbeddingService:
             self.dimensions = getattr(settings, 'EMBEDDING_DIMENSIONS', 1536)
             self.provider = "openai"
             logger.info("Using OpenAI directly for embeddings")
-        elif self.use_ollama:
+        elif self.use_ollama and False: # Force local for this user setup
             # Ollama Configuration
             self.model = getattr(settings, 'OLLAMA_EMBEDDING_MODEL', 'nomic-embed-text')
             self.dimensions = 768 # Default for nomic-embed-text/mxbai-embed-large
@@ -78,6 +78,16 @@ class EmbeddingService:
                      logger.warning(f"⚠️ Ollama service reachable but list failed: {e}")
             except ImportError:
                 logger.error("Ollama python package not installed")
+        
+        elif self.provider == "local":
+            try:
+                from sentence_transformers import SentenceTransformer
+                self.model = "all-MiniLM-L6-v2"
+                self.client = SentenceTransformer(self.model)
+                self.dimensions = 384
+                logger.info(f"✅ Local embedding service initialized with model: {self.model}")
+            except Exception as e:
+                logger.error(f"Failed to initialize local embeddings: {e}")
         else:
             logger.warning("⚠️ No valid embedding provider configured. RAG features disabled.")
 
@@ -117,6 +127,11 @@ class EmbeddingService:
                     prompt=text
                 )
                 return response['embedding']
+            
+            # Local
+            elif self.provider == "local":
+                embedding = self.client.encode(text)
+                return embedding.tolist()
                 
             return None
             
@@ -161,6 +176,11 @@ class EmbeddingService:
                     except Exception as e:
                         logger.warning(f"Ollama embedding failed for item: {e}")
                         all_embeddings.append(None)
+            
+            # Local
+            elif self.provider == "local":
+                embeddings = self.client.encode(cleaned_texts)
+                return embeddings.tolist()
                         
             return all_embeddings
             

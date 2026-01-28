@@ -166,7 +166,7 @@ class AnalysisResponse(BaseModel):
     Final wrapper for all agents' outputs.
     This is what the wrapper service returns to the API.
     """
-    # NEW: CamelAI-Grade Fields
+    # NEW: Enterprise-Grade Fields
     understanding: str = "Analyzing data..."  # "You're asking about..."
     approach: str = "Direct analysis"  # "To answer this, I will..."
     exploratory_steps: List[Dict[str, Any]] = Field(default_factory=list)  # Preliminary query results

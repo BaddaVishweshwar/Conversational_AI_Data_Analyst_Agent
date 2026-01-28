@@ -49,7 +49,7 @@ class AnalysisPlannerAgent:
             for msg in conversation_history[-3:]: # Last 3 messages
                 history_str += f"- {msg['role'].upper()}: {msg['content']}\n"
 
-        base_prompt = f"""You are a Senior Data Engineer (CamelAI Standard). Create a precise analysis plan and MULTIPLE SQL queries.
+        base_prompt = f"""You are a Senior Data Engineer (Enterprise Standard). Create a precise analysis plan and MULTIPLE SQL queries.
 
 USER QUERY: "{query}"
 INTENT: {intent.intent.value}

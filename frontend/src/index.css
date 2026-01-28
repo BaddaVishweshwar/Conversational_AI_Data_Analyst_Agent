@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Camel.ai-Inspired Design System */
+/* Enterprise Design System */
 #root {
   min-height: 100vh;
   background-color: #0a0a0a;
@@ -10,7 +10,7 @@
 
 @layer base {
   :root {
-    /* Deep Charcoal Theme - Camel.ai Style */
+    /* Deep Charcoal Theme - Enterprise Style */
     --background: 0 0% 4%;
     /* #0a0a0a deep charcoal */
     --foreground: 0 0% 88%;
@@ -106,7 +106,7 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
   }
 
-  /* Custom scrollbar - Camel.ai minimal */
+  /* Custom scrollbar - Minimal */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;

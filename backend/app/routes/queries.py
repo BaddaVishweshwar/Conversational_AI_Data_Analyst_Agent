@@ -216,12 +216,22 @@ async def ask_question(
         # We need to map it if it's the image type
         
         viz_config = {}
+        python_chart = None
+
         if visualization:
              if visualization.get('chart_type') == 'image_base64':
                  # Pass image_base64 directly - frontend expects it at top level
+                 b64_data = visualization.get('image_base64')
+                 if b64_data:
+                     # Ensure data URI prefix
+                     if not b64_data.startswith('data:image'):
+                         python_chart = f"data:image/png;base64,{b64_data}"
+                     else:
+                         python_chart = b64_data
+                 
                  viz_config = {
                      "chart_type": "image_base64",
-                     "image_base64": visualization.get('image_base64'),
+                     "image_base64": b64_data,
                      "title": visualization.get('title', 'Generated Chart')
                  }
              else:
@@ -238,6 +248,8 @@ async def ask_question(
         query.generated_sql = sql_query
         query.result_data = result_data
         query.visualization_config = viz_config
+        query.python_chart = python_chart
+        query.insights = insights
         query.insights = insights
         query.execution_time = execution_time
         query.status = "success"
@@ -629,18 +641,37 @@ async def ask_question_v4(
         metadata = analysis_response.get('metadata', {})
         
         # Prepare visualization config for frontend
-        viz_config = {
-            "type": visualization.get('chart_type', 'table'),
-            "reason": visualization.get('reason', ''),
-            "data": result_data,
-            "columns": list(result_data[0].keys()) if result_data else []
-        }
+        # Prepare visualization config for frontend
+        viz_config = {}
+        python_chart = None
+        
+        if visualization and visualization.get('chart_type') == 'image_base64':
+             b64_data = visualization.get('image_base64')
+             if b64_data:
+                 if not b64_data.startswith('data:image'):
+                     python_chart = f"data:image/png;base64,{b64_data}"
+                 else:
+                     python_chart = b64_data
+             
+             viz_config = {
+                 "chart_type": "image_base64", 
+                 "image_base64": b64_data,
+                 "title": visualization.get('title', 'Generated Chart')
+             }
+        else:
+             viz_config = {
+                "type": visualization.get('chart_type', 'table') if visualization else 'table',
+                "reason": visualization.get('reason', '') if visualization else '',
+                "data": result_data,
+                "columns": list(result_data[0].keys()) if result_data else []
+            }
         
         # Update query with results
         execution_time = analysis_response.get('execution_time', int((time.time() - start_time) * 1000))
         query.generated_sql = sql_query
         query.result_data = result_data
         query.visualization_config = viz_config
+        query.python_chart = python_chart
         query.insights = insights
         query.execution_time = execution_time
         query.status = "success"

@@ -8,7 +8,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Task-specific temperature configurations (CamelAI-grade)
+# Task-specific temperature configurations (Enterprise-grade)
 TEMPERATURE_CONFIG = {
     'planning': 0.5,           # Creative but structured
     'exploratory': 0.3,        # Focused exploration
@@ -34,6 +34,7 @@ class OllamaService:
     def __init__(self):
         self._hf_service = None
         self._github_service = None
+        self._anthropic_service = None
         self._initialized = False
         self.provider = "ollama"
         self.model_name = settings.OLLAMA_MODEL
@@ -52,6 +53,20 @@ class OllamaService:
                     return
             except Exception as e:
                 logger.warning(f"Failed to initialize GitHub service: {e}")
+
+        # Priority 2: Anthropic (Claude)
+        if settings.USE_ANTHROPIC:
+            try:
+                from .anthropic_service import AnthropicService
+                self._anthropic_service = AnthropicService()
+                if self._anthropic_service.check_availability():
+                    self.provider = "anthropic"
+                    self.model_name = settings.ANTHROPIC_MODEL
+                    logger.info(f"🧠 Using Anthropic Provider: {self.model_name}")
+                    self._initialized = True
+                    return
+            except Exception as e:
+                logger.warning(f"Failed to initialize Anthropic service: {e}")
         
         # Priority 3: Ollama (Local fallback)
         self.provider = "ollama"
@@ -65,6 +80,8 @@ class OllamaService:
         self._ensure_initialized()
         if self._github_service:
             return self._github_service.check_availability()
+        if self._anthropic_service:
+            return self._anthropic_service.check_availability()
         if self._hf_service:
             return self._hf_service.check_availability()
         return True
@@ -102,6 +119,17 @@ class OllamaService:
                 task_type=task_type
             )
         
+        # Route to Anthropic if enabled
+        if self._anthropic_service and self.provider == "anthropic":
+            return await self._anthropic_service.generate_response(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                json_mode=json_mode,
+                temperature=temperature or 0.2,
+                max_tokens=max_tokens or 4096,
+                task_type=task_type
+            )
+        
         # Route to HuggingFace if enabled
         if self._hf_service:
             return await asyncio.to_thread(
@@ -128,7 +156,7 @@ class OllamaService:
         
         logger.debug(f"Using temperature {temperature} for task: {task_type}")
         
-        # Ollama options with CamelAI-grade configuration
+        # Ollama options with Enterprise-grade configuration
         options = {
             "temperature": temperature,
             "num_ctx": settings.OLLAMA_NUM_CTX,  # Use settings

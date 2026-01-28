@@ -1,7 +1,7 @@
 """
 Analytics Service V3 - Enhanced Multi-Agent Pipeline
 
-CamelAI-grade multi-agent system with:
+Enterprise-grade multi-agent system with:
 - Enhanced prompting with rich context
 - Exploratory query phase (2-3 preliminary queries)
 - Context enrichment (samples + statistics)
@@ -24,7 +24,7 @@ from ..agents.enhanced_exploration_agent import enhanced_exploration_agent
 from ..services.sql_validator_service import sql_validator
 from ..services.data_quality_service import data_quality_service
 from ..services.self_consistency_service import self_consistency_service
-from ..prompts.camelai_prompts import (
+from ..prompts.enterprise_prompts import (
     MASTER_SYSTEM_PROMPT,
     SQL_GENERATION_PROMPT,
     INSIGHT_PROMPT,
@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 
 class AnalyticsServiceV3:
     """
-    Enhanced Multi-Agent Pipeline (CamelAI-Grade):
+    Enhanced Multi-Agent Pipeline (Enterprise-Grade):
     
     User Query
        ↓
@@ -69,7 +69,7 @@ class AnalyticsServiceV3:
        ↓
     7. Executive Insight Generation
        ↓
-    8. Response Formatting (CamelAI structure)
+    8. Response Formatting (Enterprise structure)
     """
     
     # Cache enriched schemas
@@ -101,7 +101,7 @@ class AnalyticsServiceV3:
         logger.info(f"🚀 Starting enhanced multi-agent analysis for: '{query}'")
         
         try:
-            # Step 0: Data Quality Check (NEW - CamelAI)
+            # Step 0: Data Quality Check (NEW - Enterprise)
             logger.info("Step 0/9: Analyzing data quality...")
             data_quality_report = data_quality_service.analyze(df)
             logger.info(f"📊 Data quality score: {data_quality_report['quality_score']}/100")
@@ -126,7 +126,7 @@ class AnalyticsServiceV3:
             
             # Step 3: Exploratory Queries
             logger.info("Step 3/8: Running exploratory analysis...")
-            exploratory_results = enhanced_exploration_agent.explore(
+            exploratory_results = await enhanced_exploration_agent.explore(
                 sub_questions=sub_questions,
                 df=df,
                 enriched_schema=enriched_schema,
@@ -151,7 +151,7 @@ class AnalyticsServiceV3:
             
             logger.info(f"✅ SQL generated: {len(main_sql)} characters")
             
-            # Step 4.5: SQL Validation & Auto-Correction (NEW - CamelAI)
+            # Step 4.5: SQL Validation & Auto-Correction (NEW - Enterprise)
             logger.info("Step 4.5/9: Validating SQL...")
             validation_result = await sql_validator.validate_and_correct(
                 sql=main_sql,
@@ -189,7 +189,7 @@ class AnalyticsServiceV3:
             
             logger.info(f"✅ Visualizations selected: {len(visualizations)} charts")
             
-            # Step 6.5: Generate Plotly Charts (NEW - CamelAI)
+            # Step 6.5: Generate Plotly Charts (NEW - Enterprise)
             logger.info("Step 6.5/9: Generating interactive Plotly visualizations...")
             from ..services.plotly_service import plotly_service
             
@@ -223,8 +223,8 @@ class AnalyticsServiceV3:
             
             logger.info(f"✅ Insights generated")
             
-            # Step 8: Response Structure Enforcement (NEW - CamelAI)
-            logger.info("Step 8/9: Enforcing CamelAI response structure...")
+            # Step 8: Response Structure Enforcement (NEW - Enterprise)
+            logger.info("Step 8/9: Enforcing Enterprise response structure...")
             from ..services.response_structure_enforcer import response_structure_enforcer
             
             structured_response = response_structure_enforcer.enforce_structure(
@@ -257,8 +257,8 @@ class AnalyticsServiceV3:
                 execution_time_ms=total_time_ms
             )
             
-            # Add CamelAI-specific fields
-            response['camelai_structure'] = structured_response
+            # Add Enterprise-specific fields
+            response['structured_analysis'] = structured_response
             response['data_quality'] = data_quality_report
             response['sql_validation'] = validation_result
             response['plotly_charts'] = plotly_charts
@@ -315,7 +315,7 @@ class AnalyticsServiceV3:
             )
             
             # Generate with LLM
-            response = ollama_service.generate_response(
+            response = await ollama_service.generate_response(
                 prompt=prompt,
                 json_mode=True,
                 task_type='planning'
@@ -349,7 +349,7 @@ class AnalyticsServiceV3:
     ) -> Dict[str, Any]:
         """Generate main SQL query informed by exploration."""
         try:
-            # Format schema with samples (CamelAI style)
+            # Format schema with samples (Enterprise style)
             import pandas as pd
             # Create a small sample DataFrame for schema formatting
             sample_data = enriched_schema.get('sample_data', [])
@@ -365,7 +365,7 @@ class AnalyticsServiceV3:
             # Format conversation history
             last_3_exchanges = format_conversation_history([])  # TODO: Add actual history
             
-            # Create prompt using CamelAI template
+            # Create prompt using Enterprise template
             prompt = SQL_GENERATION_PROMPT.format(
                 schema_with_samples=schema_with_samples,
                 last_3_exchanges=last_3_exchanges,
@@ -391,7 +391,7 @@ class AnalyticsServiceV3:
             
             # Fallback to direct generation if SC fails
             logger.warning(f"Self-consistency failed: {sc_result.get('error')}. Falling back to direct generation.")
-            response = ollama_service.generate_response(
+            response = await ollama_service.generate_response(
                 prompt=prompt,
                 system_prompt=MASTER_SYSTEM_PROMPT,
                 json_mode=True,
@@ -485,7 +485,7 @@ class AnalyticsServiceV3:
                     else:
                         column_types[col] = 'text'
             
-            # Create prompt using CamelAI template
+            # Create prompt using Enterprise template
             column_info = ", ".join([f"{col} ({column_types.get(col, 'unknown')})" for col in columns])
             results_json = json.dumps(data[:10], indent=2, default=str)
             
@@ -497,7 +497,7 @@ class AnalyticsServiceV3:
             )
             
             # Generate with LLM using MASTER_SYSTEM_PROMPT
-            response = ollama_service.generate_response(
+            response = await ollama_service.generate_response(
                 prompt=prompt,
                 system_prompt=MASTER_SYSTEM_PROMPT,
                 json_mode=True,
@@ -605,7 +605,7 @@ class AnalyticsServiceV3:
             
             # 3. Run Insight Generator (Narrative Generation)
             logger.info("  Running Insight Generator Agent...")
-            insights = insight_generator.generate(
+            insights = await insight_generator.generate(
                 query=query,
                 execution_result=exec_res,
                 intent=intent_res,

@@ -3,13 +3,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Database, Mail, Lock } from 'lucide-react';
-import { api } from '../lib/api';
+import { useAuthStore } from '../store/authStore';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const login = useAuthStore((state) => state.login);
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -18,18 +19,10 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const response = await api.post('/auth/login', {
-                email,
-                password
-            });
-
-            // Save tokens
-            localStorage.setItem('access_token', response.data.access_token);
-            localStorage.setItem('refresh_token', response.data.refresh_token);
+            await login(email, password);
 
             // Navigate to analytics
             navigate('/chat');
-            window.location.reload(); // Force reload to update auth state
         } catch (err: any) {
             setError(err.response?.data?.detail || 'Invalid credentials');
         } finally {

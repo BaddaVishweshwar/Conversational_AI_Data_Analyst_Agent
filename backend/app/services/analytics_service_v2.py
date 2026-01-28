@@ -20,7 +20,7 @@ from ..agents.insight_generator_agent import insight_generator
 from ..agents.data_interpretation_agent import data_interpretation_agent
 from ..agents.insight_generator_agent import insight_generator
 from ..agents.data_interpretation_agent import data_interpretation_agent
-# NEW: CamelAI-Grade Agents
+# NEW: Enterprise-Grade Agents
 from ..agents.query_planner_agent import query_planner
 from ..agents.exploration_agent import exploration_agent
 from ..agents.vibe_analysis_agent import vibe_agent # NEW Vibe Agent
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 class AnalyticsServiceV2:
     """
-    Multi-agent pipeline orchestrator (CamelAI-Grade):
+    Multi-agent pipeline orchestrator (Enterprise-Grade):
     
     User Query
        ↓
@@ -163,7 +163,7 @@ class AnalyticsServiceV2:
             # Prepare history for agents
             history = context.get('history', []) if context else []
             
-            # Step 3.5: Query Planning (NEW - CamelAI Grade)
+            # Step 3.5: Query Planning (NEW - Enterprise Grade)
             logger.info("Step 3.5/10: Planning comprehensive analysis...")
             planning_result = query_planner.plan(
                 query=resolved_query,
@@ -174,7 +174,7 @@ class AnalyticsServiceV2:
             reasoning_steps.append(f"Analysis approach: {planning_result.approach}")
             logger.info(f"✅ Planning complete: {len(planning_result.sub_questions)} sub-questions")
             
-            # Step 4: Exploration (NEW - CamelAI Grade)
+            # Step 4: Exploration (NEW - Enterprise Grade)
             logger.info("Step 4/10: Running exploratory analysis...")
             exploration_results = exploration_agent.explore(
                 sub_questions=planning_result.sub_questions,
@@ -297,7 +297,7 @@ class AnalyticsServiceV2:
             )
             reasoning_steps.append(f"Data interpretation: {interpretation.main_finding}")
 
-            # Step 9: Insight Generation (with ALL context - CamelAI Grade)
+            # Step 9: Insight Generation (with ALL context - Enterprise Grade)
             logger.info("Step 9/10: Generating executive insights...")
             insights = insight_generator.generate(
                 query=query,
@@ -310,11 +310,11 @@ class AnalyticsServiceV2:
             
             reasoning_steps.append(f"Insights generated with {insights.confidence:.0%} confidence")
             
-            # Build final response (CamelAI-Grade structure)
+            # Build final response (Enterprise-Grade structure)
             total_time = int((time.time() - start_time) * 1000)
             
             response = AnalysisResponse(
-                # NEW: CamelAI fields
+                # NEW: Enterprise fields
                 understanding=planning_result.understanding,
                 approach=planning_result.approach,
                 exploratory_steps=exploration_dicts,
